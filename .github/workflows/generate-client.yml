@@ -24,7 +24,7 @@ jobs:
 
       - name: Fetch OpenAPI.yaml from evilflowers-protocol
         run: |
-          git clone --depth=1 --branch ${{ github.event.client_payload.ref }} git@github.com:EvilFlowersCatalog/evilflowers-protocol.git protocol-upstream
+          git clone --depth=1 --branch ${{ github.event.client_payload.ref }} https://github.com/EvilFlowersCatalog/evilflowers-protocol.git protocol-upstream
           cp protocol-upstream/openapi/openapi.yaml openapi/openapi.yaml
           echo "${{ github.event.client_payload.ref }}" > VERSION.txt
 
