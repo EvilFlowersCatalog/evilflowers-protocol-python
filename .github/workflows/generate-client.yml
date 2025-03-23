@@ -1,0 +1,42 @@
+name: Generate Python Client
+
+on:
+  workflow_dispatch:
+  repository_dispatch:
+    types: [protocol-updated]
+
+jobs:
+  generate-client:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install tooling
+        run: |
+          pip install datamodel-codegen poetry
+          poetry install --no-root
+
+      - name: Fetch OpenAPI.yaml from evilflowers-protocol
+        run: |
+          git clone --depth=1 --branch ${{ github.event.client_payload.ref }} git@github.com:EvilFlowersCatalog/evilflowers-protocol.git protocol-upstream
+          cp protocol-upstream/openapi/openapi.yaml openapi/openapi.yaml
+          echo "${{ github.event.client_payload.ref }}" > VERSION.txt
+
+      - name: Generate Pydantic Models
+        run: |
+          rm -rf evilflowers_protocol/models/*
+          datamodel-codegen --input openapi/openapi.yaml --input-file-type openapi --output evilflowers_protocol/models/ --field-constraints --reuse-model
+
+      - name: Commit generated code
+        run: |
+          git config user.name "ci-bot"
+          git config user.email "ci@evilflowers.org"
+          git add evilflowers_protocol/models VERSION.txt openapi/openapi.yaml
+          git commit -m "Auto-generate client for ${{ github.event.client_payload.ref }}" || echo "Nothing to commit"
+          git push origin ${{ github.event.client_payload.ref }}
