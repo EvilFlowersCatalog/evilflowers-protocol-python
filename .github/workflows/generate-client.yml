@@ -33,7 +33,7 @@ jobs:
         run: |
           rm -rf evilflowers_protocol/models/*
           mkdir -p evilflowers_protocol
-          datamodel-codegen --input openapi/openapi.yaml --input-file-type openapi --output evilflowers_protocol/models/ --field-constraints --reuse-model
+          datamodel-codegen --input openapi/openapi.yaml --input-file-type openapi --output evilflowers_protocol/schema.py --field-constraints --reuse-model
 
       - name: Commit generated code
         run: |
