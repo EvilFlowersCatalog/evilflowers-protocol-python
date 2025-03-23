@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "evilflowers-protocol"
+version = "0.1.0"
+description = "Auto-generated Pydantic models and Event object for EvilFlowers system."
+authors = ["EvilFlowers Team <dev@evilflowers.org>"]
+license = "MIT"
+readme = "README.md"
+packages = [{ include = "evilflowers_protocol" }]
+homepage = "https://github.com/EvilFlowersCatalog/evilflowers-protocol-python"
+repository = "https://github.com/EvilFlowersCatalog/evilflowers-protocol-python"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+pydantic = "^2.8"
+
+[tool.poetry.dev-dependencies]
+datamodel-code-generator = { version = "^0.25.2", extras = ["http"] }
+black = "^24.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
