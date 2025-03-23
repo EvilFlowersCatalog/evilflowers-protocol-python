@@ -39,6 +39,6 @@ jobs:
         run: |
           git config user.name "ci-bot"
           git config user.email "ci@evilflowers.org"
-          git add evilflowers_protocol/models VERSION.txt openapi/openapi.yaml
+          git add evilflowers_protocol/schema.py VERSION.txt openapi/openapi.yaml
           git commit -m "Auto-generate client for ${{ github.event.client_payload.ref }}" || echo "Nothing to commit"
           git push origin ${{ github.event.client_payload.ref }}
