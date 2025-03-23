@@ -19,7 +19,7 @@ jobs:
 
       - name: Install tooling
         run: |
-          pip install datamodel-codegen poetry
+          pip install datamodel-code-generator poetry
           poetry install --no-root
 
       - name: Fetch OpenAPI.yaml from evilflowers-protocol
