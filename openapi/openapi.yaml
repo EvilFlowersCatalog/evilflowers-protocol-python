@@ -4723,6 +4723,95 @@
         "title": "ShelfRecordSerializer.Base",
         "type": "object"
       },
+      "Mode": {
+        "enum": [
+          "read",
+          "write",
+          "manage"
+        ],
+        "title": "Mode",
+        "type": "string"
+      },
+      "apps__api__serializers__users__UserSerializer__Detailed": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "username": {
+            "title": "Username",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "surname": {
+            "title": "Surname",
+            "type": "string"
+          },
+          "is_superuser": {
+            "title": "Is Superuser",
+            "type": "boolean"
+          },
+          "is_active": {
+            "title": "Is Active",
+            "type": "boolean"
+          },
+          "last_login": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              }
+            ],
+            "nullable": true,
+            "title": "Last Login"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "permissions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Permissions",
+            "type": "array"
+          },
+          "catalog_permissions": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/Mode"
+            },
+            "propertyNames": {
+              "format": "uuid"
+            },
+            "title": "Catalog Permissions",
+            "type": "object"
+          }
+        },
+        "required": [
+          "id",
+          "username",
+          "name",
+          "surname",
+          "is_superuser",
+          "is_active",
+          "last_login",
+          "created_at",
+          "updated_at",
+          "permissions"
+        ],
+        "title": "UserSerializer.Detailed",
+        "type": "object"
+      },
       "apps__api__serializers__api_keys__ApiKeySerializer__Base": {
         "properties": {
           "id": {
@@ -4779,6 +4868,69 @@
           "updated_at"
         ],
         "title": "ApiKeySerializer.Base",
+        "type": "object"
+      },
+      "DetailType": {
+        "enum": [
+          "/out-of-range",
+          "/not-found",
+          "/validation-error",
+          "/conflict"
+        ],
+        "title": "DetailType",
+        "type": "string"
+      },
+      "apps__core__errors__ProblemDetail": {
+        "properties": {
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "type": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DetailType"
+              }
+            ],
+            "default": null,
+            "nullable": true
+          },
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              }
+            ],
+            "default": null,
+            "nullable": true,
+            "title": "Detail"
+          },
+          "trace": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "default": null,
+            "nullable": true,
+            "title": "Trace"
+          },
+          "additional_data": {
+            "anyOf": [
+              {}
+            ],
+            "default": null,
+            "nullable": true,
+            "title": "Additional Data"
+          }
+        },
+        "required": [
+          "title"
+        ],
+        "title": "ProblemDetail",
         "type": "object"
       },
       "apps__api__serializers__entries__AcquisitionSerializer__Nested": {
@@ -4923,15 +5075,6 @@
         ],
         "title": "UserSerializer.Detailed",
         "type": "object"
-      },
-      "Mode": {
-        "enum": [
-          "read",
-          "write",
-          "manage"
-        ],
-        "title": "Mode",
-        "type": "string"
       },
       "apps__api__serializers__tokens__TokenSerializer__Access": {
         "properties": {
@@ -5559,166 +5702,6 @@
         "title": "AcquisitionSerializer.Base",
         "type": "object"
       },
-      "DetailType": {
-        "enum": [
-          "/out-of-range",
-          "/not-found",
-          "/validation-error",
-          "/conflict"
-        ],
-        "title": "DetailType",
-        "type": "string"
-      },
-      "apps__core__errors__ProblemDetail": {
-        "properties": {
-          "title": {
-            "title": "Title",
-            "type": "string"
-          },
-          "type": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/DetailType"
-              }
-            ],
-            "default": null,
-            "nullable": true
-          },
-          "detail": {
-            "anyOf": [
-              {
-                "type": "string"
-              }
-            ],
-            "default": null,
-            "nullable": true,
-            "title": "Detail"
-          },
-          "trace": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              }
-            ],
-            "default": null,
-            "nullable": true,
-            "title": "Trace"
-          },
-          "additional_data": {
-            "anyOf": [
-              {}
-            ],
-            "default": null,
-            "nullable": true,
-            "title": "Additional Data"
-          }
-        },
-        "required": [
-          "title"
-        ],
-        "title": "ProblemDetail",
-        "type": "object"
-      },
-      "apps__api__serializers__catalogs__UserCatalog": {
-        "properties": {
-          "mode": {
-            "title": "Mode",
-            "type": "string"
-          },
-          "user": {
-            "$ref": "#/components/schemas/Minimal"
-          }
-        },
-        "required": [
-          "mode",
-          "user"
-        ],
-        "title": "UserCatalog",
-        "type": "object"
-      },
-      "apps__api__serializers__users__UserSerializer__Detailed": {
-        "properties": {
-          "id": {
-            "format": "uuid",
-            "title": "Id",
-            "type": "string"
-          },
-          "username": {
-            "title": "Username",
-            "type": "string"
-          },
-          "name": {
-            "title": "Name",
-            "type": "string"
-          },
-          "surname": {
-            "title": "Surname",
-            "type": "string"
-          },
-          "is_superuser": {
-            "title": "Is Superuser",
-            "type": "boolean"
-          },
-          "is_active": {
-            "title": "Is Active",
-            "type": "boolean"
-          },
-          "last_login": {
-            "anyOf": [
-              {
-                "format": "date-time",
-                "type": "string"
-              }
-            ],
-            "nullable": true,
-            "title": "Last Login"
-          },
-          "created_at": {
-            "format": "date-time",
-            "title": "Created At",
-            "type": "string"
-          },
-          "updated_at": {
-            "format": "date-time",
-            "title": "Updated At",
-            "type": "string"
-          },
-          "permissions": {
-            "items": {
-              "type": "string"
-            },
-            "title": "Permissions",
-            "type": "array"
-          },
-          "catalog_permissions": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/Mode"
-            },
-            "propertyNames": {
-              "format": "uuid"
-            },
-            "title": "Catalog Permissions",
-            "type": "object"
-          }
-        },
-        "required": [
-          "id",
-          "username",
-          "name",
-          "surname",
-          "is_superuser",
-          "is_active",
-          "last_login",
-          "created_at",
-          "updated_at",
-          "permissions"
-        ],
-        "title": "UserSerializer.Detailed",
-        "type": "object"
-      },
       "ValidationErrorItem": {
         "properties": {
           "code": {
@@ -5814,6 +5797,23 @@
           "validation_errors"
         ],
         "title": "ValidationError",
+        "type": "object"
+      },
+      "apps__api__serializers__catalogs__UserCatalog": {
+        "properties": {
+          "mode": {
+            "title": "Mode",
+            "type": "string"
+          },
+          "user": {
+            "$ref": "#/components/schemas/Minimal"
+          }
+        },
+        "required": [
+          "mode",
+          "user"
+        ],
+        "title": "UserCatalog",
         "type": "object"
       },
       "apps__api__response__PaginationModel": {
