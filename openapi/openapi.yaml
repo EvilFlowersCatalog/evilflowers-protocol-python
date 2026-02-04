@@ -3471,7 +3471,7 @@
                     "items": {
                       "type": "array",
                       "items": {
-                        "$ref": "#/components/schemas/apps__readium__serializers__LicenseSerializer__Base"
+                        "$ref": "#/components/schemas/apps__readium__serializers__LicenseSerializer__Detailed"
                       }
                     }
                   }
@@ -4844,6 +4844,82 @@
         "title": "LanguageSerializer.Base",
         "type": "object"
       },
+      "LicenseState": {
+        "enum": [
+          "ready",
+          "active",
+          "returned",
+          "expired",
+          "revoked",
+          "cancelled"
+        ],
+        "title": "LicenseState",
+        "type": "string"
+      },
+      "apps__readium__serializers__LicenseSerializer__Base": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "entry_id": {
+            "format": "uuid",
+            "title": "Entry Id",
+            "type": "string"
+          },
+          "user_id": {
+            "format": "uuid",
+            "title": "User Id",
+            "type": "string"
+          },
+          "state": {
+            "$ref": "#/components/schemas/LicenseState"
+          },
+          "starts_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              }
+            ],
+            "nullable": true,
+            "title": "Starts At"
+          },
+          "expires_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              }
+            ],
+            "nullable": true,
+            "title": "Expires At"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "entry_id",
+          "user_id",
+          "state",
+          "starts_at",
+          "expires_at",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "LicenseSerializer.Base",
+        "type": "object"
+      },
       "apps__api__serializers__entries__EntrySerializer__Detailed": {
         "properties": {
           "id": {
@@ -5796,55 +5872,7 @@
         "title": "AnnotationItemSerializer.Base",
         "type": "object"
       },
-      "apps__core__errors__ValidationErrorItem": {
-        "properties": {
-          "code": {
-            "anyOf": [
-              {
-                "type": "string"
-              }
-            ],
-            "default": null,
-            "nullable": true,
-            "title": "Code"
-          },
-          "message": {
-            "title": "Message",
-            "type": "string"
-          },
-          "path": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              }
-            ],
-            "default": null,
-            "nullable": true,
-            "title": "Path"
-          }
-        },
-        "required": [
-          "message"
-        ],
-        "title": "ValidationErrorItem",
-        "type": "object"
-      },
-      "LicenseState": {
-        "enum": [
-          "ready",
-          "active",
-          "returned",
-          "expired",
-          "revoked",
-          "cancelled"
-        ],
-        "title": "LicenseState",
-        "type": "string"
-      },
-      "apps__readium__serializers__LicenseSerializer__Base": {
+      "apps__readium__serializers__LicenseSerializer__Detailed": {
         "properties": {
           "id": {
             "format": "uuid",
@@ -5893,6 +5921,9 @@
             "format": "date-time",
             "title": "Updated At",
             "type": "string"
+          },
+          "entry": {
+            "$ref": "#/components/schemas/apps__api__serializers__entries__EntrySerializer__Base"
           }
         },
         "required": [
@@ -5903,9 +5934,46 @@
           "starts_at",
           "expires_at",
           "created_at",
-          "updated_at"
+          "updated_at",
+          "entry"
         ],
-        "title": "LicenseSerializer.Base",
+        "title": "LicenseSerializer.Detailed",
+        "type": "object"
+      },
+      "apps__core__errors__ValidationErrorItem": {
+        "properties": {
+          "code": {
+            "anyOf": [
+              {
+                "type": "string"
+              }
+            ],
+            "default": null,
+            "nullable": true,
+            "title": "Code"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "path": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "default": null,
+            "nullable": true,
+            "title": "Path"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "title": "ValidationErrorItem",
         "type": "object"
       },
       "apps__api__serializers__catalogs__CatalogSerializer__Base": {
@@ -6253,36 +6321,6 @@
           "catalog_id"
         ]
       },
-      "UpdateLicenseForm": {
-        "type": "object",
-        "title": "UpdateLicenseForm",
-        "properties": {
-          "state": {
-            "title": "state",
-            "description": "",
-            "type": "string",
-            "enum": [
-              "ready",
-              "active",
-              "returned",
-              "expired",
-              "revoked",
-              "cancelled"
-            ]
-          },
-          "duration": {
-            "title": "duration",
-            "description": "Duration in ISO 8601 format. Example: \"PT1H30M\" for 1 hour and 30 minutes.\nThe format is defined as follows:\n- \"P\" indicates the period.\n- \"Y\" for years, \"M\" for months, \"D\" for days.\n- \"T\" indicates the start of the time section.\n- \"H\" for hours, \"M\" for minutes, \"S\" for seconds.\n- Valid examples include:\n  - \"PT30M\" (30 minutes)\n  - \"P1Y2M10DT5H30M\" (1 year, 2 months, 10 days, 5 hours, and 30 minutes)",
-            "type": "string",
-            "example": "P14D",
-            "pattern": "^P(?!P)(?:(\\d+Y)?(\\d+M)?(\\d+D)?(T(?:(\\d+H)?(\\d+M)?(\\d+S)?))?)?$"
-          }
-        },
-        "required": [
-          "state",
-          "duration"
-        ]
-      },
       "PriceForm": {
         "type": "object",
         "title": "PriceForm",
@@ -6344,6 +6382,36 @@
           "title"
         ]
       },
+      "UpdateLicenseForm": {
+        "type": "object",
+        "title": "UpdateLicenseForm",
+        "properties": {
+          "state": {
+            "title": "state",
+            "description": "",
+            "type": "string",
+            "enum": [
+              "ready",
+              "active",
+              "returned",
+              "expired",
+              "revoked",
+              "cancelled"
+            ]
+          },
+          "duration": {
+            "title": "duration",
+            "description": "Duration in ISO 8601 format. Example: \"PT1H30M\" for 1 hour and 30 minutes.\nThe format is defined as follows:\n- \"P\" indicates the period.\n- \"Y\" for years, \"M\" for months, \"D\" for days.\n- \"T\" indicates the start of the time section.\n- \"H\" for hours, \"M\" for minutes, \"S\" for seconds.\n- Valid examples include:\n  - \"PT30M\" (30 minutes)\n  - \"P1Y2M10DT5H30M\" (1 year, 2 months, 10 days, 5 hours, and 30 minutes)",
+            "type": "string",
+            "example": "P14D",
+            "pattern": "^P(?!P)(?:(\\d+Y)?(\\d+M)?(\\d+D)?(T(?:(\\d+H)?(\\d+M)?(\\d+S)?))?)?$"
+          }
+        },
+        "required": [
+          "state",
+          "duration"
+        ]
+      },
       "CreateUserForm": {
         "type": "object",
         "title": "CreateUserForm",
@@ -6382,49 +6450,6 @@
           "surname",
           "password",
           "username"
-        ]
-      },
-      "CreateLicenseForm": {
-        "type": "object",
-        "title": "CreateLicenseForm",
-        "properties": {
-          "entry_id": {
-            "title": "entry_id",
-            "description": "",
-            "type": "string",
-            "format": "uuid"
-          },
-          "state": {
-            "title": "state",
-            "description": "",
-            "type": "string",
-            "enum": [
-              "ready",
-              "active",
-              "returned",
-              "expired",
-              "revoked",
-              "cancelled"
-            ]
-          },
-          "duration": {
-            "title": "duration",
-            "description": "Duration in ISO 8601 format. Example: \"PT1H30M\" for 1 hour and 30 minutes.\nThe format is defined as follows:\n- \"P\" indicates the period.\n- \"Y\" for years, \"M\" for months, \"D\" for days.\n- \"T\" indicates the start of the time section.\n- \"H\" for hours, \"M\" for minutes, \"S\" for seconds.\n- Valid examples include:\n  - \"PT30M\" (30 minutes)\n  - \"P1Y2M10DT5H30M\" (1 year, 2 months, 10 days, 5 hours, and 30 minutes)",
-            "type": "string",
-            "example": "P14D",
-            "pattern": "^P(?!P)(?:(\\d+Y)?(\\d+M)?(\\d+D)?(T(?:(\\d+H)?(\\d+M)?(\\d+S)?))?)?$"
-          },
-          "starts_at": {
-            "title": "starts_at",
-            "description": "",
-            "type": "string",
-            "format": "date-time"
-          }
-        },
-        "required": [
-          "entry_id",
-          "state",
-          "duration"
         ]
       },
       "RefreshTokenForm": {
@@ -6471,6 +6496,43 @@
         "required": [
           "name",
           "surname"
+        ]
+      },
+      "UserAcquisitionForm": {
+        "type": "object",
+        "title": "UserAcquisitionForm",
+        "properties": {
+          "acquisition_id": {
+            "title": "acquisition_id",
+            "description": "",
+            "type": "string",
+            "format": "uuid"
+          },
+          "type": {
+            "title": "type",
+            "description": "",
+            "type": "string",
+            "enum": [
+              "shared",
+              "personal",
+              "lcp"
+            ]
+          },
+          "range": {
+            "title": "range",
+            "description": "",
+            "type": "string"
+          },
+          "expire_at": {
+            "title": "expire_at",
+            "description": "",
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "acquisition_id",
+          "type"
         ]
       },
       "CategoryForm": {
@@ -6733,43 +6795,6 @@
           }
         }
       },
-      "UserAcquisitionForm": {
-        "type": "object",
-        "title": "UserAcquisitionForm",
-        "properties": {
-          "acquisition_id": {
-            "title": "acquisition_id",
-            "description": "",
-            "type": "string",
-            "format": "uuid"
-          },
-          "type": {
-            "title": "type",
-            "description": "",
-            "type": "string",
-            "enum": [
-              "shared",
-              "personal",
-              "lcp"
-            ]
-          },
-          "range": {
-            "title": "range",
-            "description": "",
-            "type": "string"
-          },
-          "expire_at": {
-            "title": "expire_at",
-            "description": "",
-            "type": "string",
-            "format": "date-time"
-          }
-        },
-        "required": [
-          "acquisition_id",
-          "type"
-        ]
-      },
       "CatalogForm": {
         "type": "object",
         "title": "CatalogForm",
@@ -6802,6 +6827,49 @@
         "required": [
           "url_name",
           "title"
+        ]
+      },
+      "CreateLicenseForm": {
+        "type": "object",
+        "title": "CreateLicenseForm",
+        "properties": {
+          "entry_id": {
+            "title": "entry_id",
+            "description": "",
+            "type": "string",
+            "format": "uuid"
+          },
+          "state": {
+            "title": "state",
+            "description": "",
+            "type": "string",
+            "enum": [
+              "ready",
+              "active",
+              "returned",
+              "expired",
+              "revoked",
+              "cancelled"
+            ]
+          },
+          "duration": {
+            "title": "duration",
+            "description": "Duration in ISO 8601 format. Example: \"PT1H30M\" for 1 hour and 30 minutes.\nThe format is defined as follows:\n- \"P\" indicates the period.\n- \"Y\" for years, \"M\" for months, \"D\" for days.\n- \"T\" indicates the start of the time section.\n- \"H\" for hours, \"M\" for minutes, \"S\" for seconds.\n- Valid examples include:\n  - \"PT30M\" (30 minutes)\n  - \"P1Y2M10DT5H30M\" (1 year, 2 months, 10 days, 5 hours, and 30 minutes)",
+            "type": "string",
+            "example": "P14D",
+            "pattern": "^P(?!P)(?:(\\d+Y)?(\\d+M)?(\\d+D)?(T(?:(\\d+H)?(\\d+M)?(\\d+S)?))?)?$"
+          },
+          "starts_at": {
+            "title": "starts_at",
+            "description": "",
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "entry_id",
+          "state",
+          "duration"
         ]
       },
       "ShelfRecordForm": {
