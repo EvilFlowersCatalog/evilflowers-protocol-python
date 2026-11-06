@@ -113,14 +113,30 @@ The tests run against a stdlib `http.server` fake on localhost; no catalog insta
 
 ## Automated OpenAPI sync
 
-`.github/workflows/generate-client.yml` regenerates `evilflowers_protocol/schema.py`:
+The spec flows through three repositories, keeping the branch or tag name at every hop:
 
-- `evilflowers-protocol` sends a `repository_dispatch` (`protocol-updated`, payload `{"ref": ...}`)
-  whenever its spec changes. You can also run the workflow by hand with a `ref` input
-  (default `develop`).
-- The workflow checks out the branch with the same name here, creating it from the default
-  branch if needed. It fetches `openapi/openapi.yaml` at that ref, runs datamodel-codegen,
-  and commits and pushes only when the output changed.
+1. **EvilFlowersCatalog** `docs.yml` runs on every push. It generates the spec with
+   `manage.py openapi` and commits it to the branch of the same name in `evilflowers-protocol`.
+2. **evilflowers-protocol** `dispatch-python-client.yml` runs on that push and sends a
+   `repository_dispatch` (`protocol-updated`, payload `{"ref": ...}`) here.
+3. **This repo** `generate-client.yml` checks out the branch with the same name, creating it
+   from the default branch if needed. It fetches `openapi/openapi.yaml` at that ref, runs
+   datamodel-codegen, and then checks the client against the result: the package must import
+   and `pytest` must pass.
+   - Checks pass: the commit is pushed to the branch.
+   - Checks fail: the commit goes to `schema-sync/<ref>` and a pull request into the branch is
+     opened (or commented on, if one is already open) with the failures. Most failures come from
+     `tests/test_overlay.py` and name the `forms.py` override to change. Fix it on that PR.
+
+You can also run the workflow by hand with a `ref` input (default `develop`), for example to
+repair a branch.
+
+To regenerate locally, with the same generator version and options as CI:
+
+```bash
+poetry run datamodel-codegen   # reads [tool.datamodel-codegen] in pyproject.toml
+poetry run pytest
+```
 
 `schema.py`, `openapi/openapi.yaml` and `VERSION.txt` are generated. Do not edit them by
 hand; fix type problems in the catalog's spec generator (`EvilFlowersCatalog/apps/openapi/`)

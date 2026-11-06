@@ -25,6 +25,21 @@ mypy = "^1.14"
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
+# `poetry run datamodel-codegen` (and the generate-client workflow) read this table.
+# Every output-shaping option is explicit: generator defaults change between releases
+# (0.25 emits pydantic v1 unless told otherwise), and the overlay in forms.py relies on v2.
+[tool.datamodel-codegen]
+input = "openapi/openapi.yaml"
+input-file-type = "openapi"
+output = "evilflowers_protocol/schema.py"
+output-model-type = "pydantic_v2.BaseModel"
+target-python-version = "3.12"
+use-standard-collections = true
+use-union-operator = true
+field-constraints = true
+reuse-model = true
+disable-timestamp = true
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"

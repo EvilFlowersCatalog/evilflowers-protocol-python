@@ -1,13 +1,28 @@
 name: Generate Python Client
 
 # Regenerates evilflowers_protocol/schema.py from the OpenAPI spec in
-# EvilFlowersCatalog/evilflowers-protocol and commits it to the branch here with the
-# same name as the spec's ref (created from the default branch if it does not exist yet).
+# EvilFlowersCatalog/evilflowers-protocol, checks the hand-written client against it,
+# and lands it on the branch here with the same name as the spec's ref.
+#
+# Upstream chain:
+#   EvilFlowersCatalog  .github/workflows/docs.yml  (push to any branch or *.*.* tag)
+#     -> runs `manage.py openapi`, commits openapi/openapi.yaml to the same-named branch
+#        of evilflowers-protocol
+#   evilflowers-protocol  .github/workflows/dispatch-python-client.yml  (that push)
+#     -> repository_dispatch "protocol-updated" {"ref": "<branch or tag>"} to this repo
 #
 # Triggers:
-#   * repository_dispatch "protocol-updated" with client_payload {"ref": "<branch or tag>"},
-#     sent by evilflowers-protocol's dispatch-python-client.yml;
-#   * workflow_dispatch with the "ref" input, for manual runs.
+#   * repository_dispatch "protocol-updated" with client_payload {"ref": "<branch or tag>"};
+#   * workflow_dispatch with the "ref" input, for manual runs and repairs.
+#
+# Outcome:
+#   * client tests pass  -> commit pushed straight to <ref> (created from the default
+#                           branch if it does not exist here yet);
+#   * client tests fail  -> commit force-pushed to schema-sync/<ref> and a PR opened (or
+#                           updated) into <ref> with the failures. <ref> is never left
+#                           holding a schema the client cannot import or use.
+#     The usual cause is tests/test_overlay.py: upstream fixed a field that forms.py
+#     still overrides, or renamed one the overlay projects. Fix forms.py on that PR.
 
 on:
   workflow_dispatch:
@@ -21,6 +36,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
 
 concurrency:
   group: generate-client-${{ github.event.client_payload.ref || inputs.ref }}
@@ -32,10 +48,12 @@ jobs:
     env:
       # Passed through env, never interpolated into scripts: the payload is untrusted input.
       REF: ${{ github.event.client_payload.ref || inputs.ref }}
+      GH_TOKEN: ${{ github.token }}
 
     steps:
       - uses: actions/checkout@v4
         with:
+          # All branches, so the target branch can be checked out below.
           fetch-depth: 0
 
       - name: Validate ref
@@ -47,12 +65,15 @@ jobs:
           git check-ref-format --branch "$REF"
 
       - name: Switch to the target branch
+        id: target
         run: |
           if git ls-remote --exit-code --heads origin "$REF" > /dev/null; then
             git checkout -B "$REF" "origin/$REF"
+            echo "new=false" >> "$GITHUB_OUTPUT"
           else
             echo "Branch $REF does not exist here yet; creating it from $(git rev-parse --abbrev-ref HEAD)"
             git checkout -B "$REF"
+            echo "new=true" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Set up Python
@@ -60,9 +81,16 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Install generator
-        # Same range as the dev dependency in pyproject.toml, so output matches local runs.
-        run: pip install "datamodel-code-generator[http]>=0.25.2,<0.26"
+      - name: Install the client, pytest and the generator
+        # The generator version comes from poetry.lock, so CI output matches
+        # `poetry run datamodel-codegen` locally.
+        run: |
+          gen_version=$(grep -A1 '^name = "datamodel-code-generator"$' poetry.lock | sed -n 's/^version = "\(.*\)"$/\1/p')
+          if [ -z "$gen_version" ]; then
+            echo "::error::datamodel-code-generator is not locked in poetry.lock on $REF"
+            exit 1
+          fi
+          pip install -e . "pytest>=8" "datamodel-code-generator[http]==$gen_version"
 
       - name: Fetch openapi.yaml from evilflowers-protocol
         run: |
@@ -73,23 +101,97 @@ jobs:
           printf '%s\n' "$REF" > VERSION.txt
 
       - name: Generate Pydantic models
+        # Same options as [tool.datamodel-codegen] in pyproject.toml; keep the two in sync.
+        # They are repeated here because older target branches predate that table, and the
+        # output must not fall back to generator defaults (0.25 defaults to pydantic v1).
         run: |
           datamodel-codegen \
             --input openapi/openapi.yaml \
             --input-file-type openapi \
             --output evilflowers_protocol/schema.py \
+            --output-model-type pydantic_v2.BaseModel \
+            --target-python-version 3.12 \
+            --use-standard-collections \
+            --use-union-operator \
             --field-constraints \
             --reuse-model \
             --disable-timestamp
 
-      - name: Commit and push
+      - name: Commit
+        id: commit
         run: |
           git config user.name "ci-bot"
           git config user.email "ci@evilflowers.org"
           git add evilflowers_protocol/schema.py VERSION.txt openapi/openapi.yaml
           if git diff --cached --quiet; then
             echo "Generated client is unchanged; nothing to commit."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           git commit -m "Auto-generate client for $REF"
-          git push origin HEAD:"$REF"
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Check the client against the new schema
+        id: check
+        if: steps.commit.outputs.changed == 'true'
+        run: |
+          report="$RUNNER_TEMP/check.txt"
+          status=0
+          {
+            echo '$ python -c "import evilflowers_protocol"'
+            python -c "import evilflowers_protocol" 2>&1 || status=1
+            if [ -d tests ]; then
+              echo '$ pytest'
+              python -m pytest -p no:cacheprovider 2>&1 || status=1
+            else
+              echo "(no tests/ on $REF; import check only)"
+            fi
+          } > "$report"
+          cat "$report"
+          if [ "$status" -eq 0 ]; then
+            echo "passed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "passed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Push to the target branch
+        if: steps.commit.outputs.changed == 'true' && steps.check.outputs.passed == 'true'
+        run: git push origin "HEAD:refs/heads/$REF"
+
+      - name: Open a schema-sync PR instead
+        if: steps.commit.outputs.changed == 'true' && steps.check.outputs.passed != 'true'
+        env:
+          NEW_BASE: ${{ steps.target.outputs.new }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          sync="schema-sync/$REF"
+          if [ "$NEW_BASE" = "true" ]; then
+            # The PR needs a base to target: publish the branch without the new schema.
+            git push origin "HEAD~1:refs/heads/$REF"
+          fi
+          git push --force origin "HEAD:refs/heads/$sync"
+
+          body="$RUNNER_TEMP/pr-body.md"
+          {
+            echo "The spec for \`$REF\` changed, and the client does not pass against the regenerated schema."
+            echo
+            echo "Usually \`tests/test_overlay.py\` names the override in \`evilflowers_protocol/forms.py\` to delete or update."
+            echo "Push the fix to this branch and merge. The next upstream change force-pushes this branch,"
+            echo "so merge before then or re-apply the fix."
+            echo
+            echo "Run: $RUN_URL"
+            echo
+            echo '```'
+            tail -c 50000 "$RUNNER_TEMP/check.txt"
+            echo '```'
+          } > "$body"
+
+          open=$(gh pr list --head "$sync" --base "$REF" --state open --json number --jq '.[0].number')
+          if [ -n "$open" ]; then
+            gh pr comment "$open" --body-file "$body"
+            echo "Updated PR #$open"
+          else
+            gh pr create --head "$sync" --base "$REF" \
+              --title "Sync client with protocol $REF" --body-file "$body"
+          fi
+          echo "::warning::Client checks failed against the $REF schema; opened or updated a PR from $sync instead of pushing to $REF"
