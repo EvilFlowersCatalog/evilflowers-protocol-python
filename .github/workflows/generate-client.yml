@@ -1,44 +1,95 @@
 name: Generate Python Client
 
+# Regenerates evilflowers_protocol/schema.py from the OpenAPI spec in
+# EvilFlowersCatalog/evilflowers-protocol and commits it to the branch here with the
+# same name as the spec's ref (created from the default branch if it does not exist yet).
+#
+# Triggers:
+#   * repository_dispatch "protocol-updated" with client_payload {"ref": "<branch or tag>"},
+#     sent by evilflowers-protocol's dispatch-python-client.yml;
+#   * workflow_dispatch with the "ref" input, for manual runs.
+
 on:
   workflow_dispatch:
+    inputs:
+      ref:
+        description: "evilflowers-protocol branch or tag to generate from; also the branch to commit to here"
+        required: true
+        default: develop
   repository_dispatch:
     types: [protocol-updated]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: generate-client-${{ github.event.client_payload.ref || inputs.ref }}
+  cancel-in-progress: false
 
 jobs:
   generate-client:
     runs-on: ubuntu-latest
+    env:
+      # Passed through env, never interpolated into scripts: the payload is untrusted input.
+      REF: ${{ github.event.client_payload.ref || inputs.ref }}
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate ref
+        run: |
+          if [ -z "$REF" ]; then
+            echo "::error::No ref: send client_payload.ref or set the ref input"
+            exit 1
+          fi
+          git check-ref-format --branch "$REF"
+
+      - name: Switch to the target branch
+        run: |
+          if git ls-remote --exit-code --heads origin "$REF" > /dev/null; then
+            git checkout -B "$REF" "origin/$REF"
+          else
+            echo "Branch $REF does not exist here yet; creating it from $(git rev-parse --abbrev-ref HEAD)"
+            git checkout -B "$REF"
+          fi
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
 
-      - name: Install tooling
-        run: |
-          pip install datamodel-code-generator poetry
-          poetry install --no-root
+      - name: Install generator
+        # Same range as the dev dependency in pyproject.toml, so output matches local runs.
+        run: pip install "datamodel-code-generator[http]>=0.25.2,<0.26"
 
-      - name: Fetch OpenAPI.yaml from evilflowers-protocol
+      - name: Fetch openapi.yaml from evilflowers-protocol
         run: |
-          git clone --depth=1 --branch ${{ github.event.client_payload.ref }} https://github.com/EvilFlowersCatalog/evilflowers-protocol.git protocol-upstream
+          git clone --depth=1 --branch "$REF" \
+            https://github.com/EvilFlowersCatalog/evilflowers-protocol.git "$RUNNER_TEMP/protocol-upstream"
           mkdir -p openapi
-          cp protocol-upstream/openapi/openapi.yaml openapi/openapi.yaml
-          echo "${{ github.event.client_payload.ref }}" > VERSION.txt
+          cp "$RUNNER_TEMP/protocol-upstream/openapi/openapi.yaml" openapi/openapi.yaml
+          printf '%s\n' "$REF" > VERSION.txt
 
-      - name: Generate Pydantic Models
+      - name: Generate Pydantic models
         run: |
-          rm -rf evilflowers_protocol/models/*
-          mkdir -p evilflowers_protocol
-          datamodel-codegen --input openapi/openapi.yaml --input-file-type openapi --output evilflowers_protocol/schema.py --field-constraints --reuse-model
+          datamodel-codegen \
+            --input openapi/openapi.yaml \
+            --input-file-type openapi \
+            --output evilflowers_protocol/schema.py \
+            --field-constraints \
+            --reuse-model \
+            --disable-timestamp
 
-      - name: Commit generated code
+      - name: Commit and push
         run: |
           git config user.name "ci-bot"
           git config user.email "ci@evilflowers.org"
           git add evilflowers_protocol/schema.py VERSION.txt openapi/openapi.yaml
-          git commit -m "Auto-generate client for ${{ github.event.client_payload.ref }}" || echo "Nothing to commit"
-          git push origin ${{ github.event.client_payload.ref }}
+          if git diff --cached --quiet; then
+            echo "Generated client is unchanged; nothing to commit."
+            exit 0
+          fi
+          git commit -m "Auto-generate client for $REF"
+          git push origin HEAD:"$REF"
