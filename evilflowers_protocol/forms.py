@@ -14,7 +14,6 @@ Each override is marked ``# upstream:`` and names the generator bug:
 * ``category_ids``, ``author_ids`` and ``feeds`` are typed as a single UUID; they are lists.
 * ``EntryForm.image`` (and ``AcquisitionForm.content``) are ``AnyUrl``; they are
   base64 ``data:`` URIs.
-* ``AcquisitionType`` on ``main`` lacks ``restricted-access`` (stale spec).
 
 ``tests/test_overlay.py`` checks each override against the generated field.
 When a regeneration fixes a field upstream, that test fails and the override
@@ -166,8 +165,8 @@ class AcquisitionMeta(_Request, schema.AcquisitionMetaForm):
     ``restricted-access``.
     """
 
-    # upstream: the generated `AcquisitionType` on `main` lacks `restricted-access`.
-    relation: str = "open-access"  # type: ignore[assignment]
+    # narrowed: non-null, so the relation is always sent.
+    relation: schema.AcquisitionType = schema.AcquisitionType.open_access
 
 
 # -------------------------------------------------------------------------- responses

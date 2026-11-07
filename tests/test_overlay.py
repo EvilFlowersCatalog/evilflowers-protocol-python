@@ -41,12 +41,6 @@ class TestUpstreamBugsStillPresent:
             f"schema.EntryForm.{field} changed upstream; delete its override in forms.EntryCreate"
         )
 
-    def test_acquisition_type_lacks_restricted_access(self) -> None:
-        values = {member.value for member in schema.AcquisitionType}
-        assert "restricted-access" not in values, (
-            "schema.AcquisitionType gained restricted-access; drop the str override in forms.AcquisitionMeta"
-        )
-
 
 @pytest.mark.parametrize(
     ("overlay", "generated"),
