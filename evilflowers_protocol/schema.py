@@ -38,39 +38,6 @@ class PaginatedResponse(BaseModel):
     items: list[dict[str, Any]] = Field(..., description='List of items')
 
 
-class AppsAssistantSerializersAgentHighlightSerializer(BaseModel):
-    id: UUID = Field(..., title='Id')
-    seq: int = Field(..., title='Seq')
-    page: int = Field(..., title='Page')
-    match: str = Field(..., title='Match')
-    quads: list[dict[str, Any]] = Field(..., title='Quads')
-    text: str = Field(..., title='Text')
-    note: str = Field(..., title='Note')
-
-
-class PaginationModel(BaseModel):
-    page: int = Field(..., title='Page')
-    limit: int = Field(..., title='Limit')
-    pages: int = Field(..., title='Pages')
-    total: int = Field(..., title='Total')
-
-
-class RootModelTypeVar(RootModel[Any]):
-    root: Any = Field(..., title='RootModel[TypeVar]')
-
-
-class AppsApiResponsePaginationResponseModel(BaseModel):
-    items: RootModelTypeVar
-    metadata: PaginationModel
-
-
-class AppsApiSerializersUsersUserSerializerMinimal(BaseModel):
-    id: UUID = Field(..., title='Id')
-    username: str = Field(..., title='Username')
-    name: str = Field(..., title='Name')
-    surname: str = Field(..., title='Surname')
-
-
 class AcquisitionMIME(Enum):
     application_pdf = 'application/pdf'
     application_epub_zip = 'application/epub+zip'
@@ -98,12 +65,140 @@ class LcpState(Enum):
     fully_borrowed = 'fully_borrowed'
 
 
+class LicenseState(Enum):
+    ready = 'ready'
+    active = 'active'
+    returned = 'returned'
+    expired = 'expired'
+    revoked = 'revoked'
+    cancelled = 'cancelled'
+
+
 class AppsApiSerializersEntriesCategorySerializerDetailed(BaseModel):
     id: UUID = Field(..., title='Id')
     term: str = Field(..., title='Term')
     label: dict[str, str] = Field(..., title='Label')
     catalog_id: UUID = Field(..., title='Catalog Id')
     scheme: str = Field(..., title='Scheme')
+
+
+class DetailType(Enum):
+    field_out_of_range = '/out-of-range'
+    field_not_found = '/not-found'
+    field_validation_error = '/validation-error'
+    field_conflict = '/conflict'
+    field_forbidden = '/forbidden'
+    field_internal_error = '/internal-error'
+    field_passphrase_required = '/passphrase-required'
+    field_readium_amount_below_active_count = '/readium-amount-below-active-count'
+
+
+class AppsCoreErrorsProblemDetail(BaseModel):
+    title: str = Field(..., title='Title')
+    type: DetailType | None = None
+    detail: str | None = Field(None, title='Detail')
+    trace: list[str] | None = Field(None, title='Trace')
+    additional_data: Any | None = Field(None, title='Additional Data')
+
+
+class AppsApiSerializersEntriesEntryFacetItem(BaseModel):
+    id: UUID = Field(..., title='Id')
+    count: int = Field(..., title='Count')
+
+
+class AppsApiSerializersApiKeysApiKeySerializerBase(BaseModel):
+    id: UUID = Field(..., title='Id')
+    user_id: UUID = Field(..., title='User Id')
+    name: str = Field(..., title='Name')
+    is_active: bool = Field(..., title='Is Active')
+    last_seen_at: AwareDatetime = Field(..., title='Last Seen At')
+    created_at: AwareDatetime = Field(..., title='Created At')
+    updated_at: AwareDatetime = Field(..., title='Updated At')
+
+
+class Mode(Enum):
+    read = 'read'
+    write = 'write'
+    manage = 'manage'
+
+
+class AppsApiSerializersEntriesAuthorSerializerDetailed(BaseModel):
+    id: UUID = Field(..., title='Id')
+    name: str = Field(..., title='Name')
+    surname: str = Field(..., title='Surname')
+    catalog_id: UUID = Field(..., title='Catalog Id')
+    created_at: AwareDatetime = Field(..., title='Created At')
+    updated_at: AwareDatetime = Field(..., title='Updated At')
+
+
+class EntryFacetAvailability(BaseModel):
+    state: str = Field(..., title='State')
+    count: int = Field(..., title='Count')
+
+
+class EntryFacetItem(AppsApiSerializersEntriesEntryFacetItem):
+    pass
+
+
+class EntryFacetLanguage(BaseModel):
+    code: str = Field(..., title='Code')
+    count: int = Field(..., title='Count')
+
+
+class EntryFacetYears(BaseModel):
+    min: int = Field(..., title='Min')
+    max: int = Field(..., title='Max')
+
+
+class AppsApiSerializersEntriesEntryFacetSerializerBase(BaseModel):
+    languages: list[EntryFacetLanguage] = Field(..., title='Languages')
+    categories: list[EntryFacetItem] = Field(..., title='Categories')
+    feeds: list[EntryFacetItem] = Field(..., title='Feeds')
+    availability: list[EntryFacetAvailability] = Field(..., title='Availability')
+    years: EntryFacetYears
+
+
+class AppsApiResponsePaginationModel(BaseModel):
+    page: int = Field(..., title='Page')
+    limit: int = Field(..., title='Limit')
+    pages: int = Field(..., title='Pages')
+    total: int = Field(..., title='Total')
+
+
+class AppsApiSerializersUsersUserSerializerBase(BaseModel):
+    id: UUID = Field(..., title='Id')
+    username: str = Field(..., title='Username')
+    name: str = Field(..., title='Name')
+    surname: str = Field(..., title='Surname')
+    is_superuser: bool = Field(..., title='Is Superuser')
+    is_active: bool = Field(..., title='Is Active')
+    last_login: AwareDatetime = Field(..., title='Last Login')
+    created_at: AwareDatetime = Field(..., title='Created At')
+    updated_at: AwareDatetime = Field(..., title='Updated At')
+
+
+class AppsApiSerializersEntriesAcquisitionSerializerNested(BaseModel):
+    relation: AcquisitionType
+    mime: AcquisitionMIME
+    url: str | None = Field(None, title='Url')
+
+
+class Status(Enum):
+    queued = 'queued'
+    available = 'available'
+    claimed = 'claimed'
+    expired = 'expired'
+    cancelled = 'cancelled'
+
+
+class AppsApiSerializersAnnotationAnnotationSerializerBase(BaseModel):
+    id: UUID = Field(..., title='Id')
+    user_acquisition_id: UUID = Field(..., title='User Acquisition Id')
+    title: str = Field(..., title='Title')
+    kind: str = Field(..., title='Kind')
+    status: str = Field(..., title='Status')
+    created_at: AwareDatetime = Field(..., title='Created At')
+    updated_at: AwareDatetime = Field(..., title='Updated At')
 
 
 class ChatEntrySerializer(BaseModel):
@@ -130,58 +225,81 @@ class AppsAssistantSerializersChatSerializerBase(BaseModel):
     updated_at: AwareDatetime = Field(..., title='Updated At')
 
 
-class AppsApiSerializersStatusStatusStatistics(BaseModel):
-    catalogs: int = Field(..., title='Catalogs')
-    entries: int = Field(..., title='Entries')
-    acquisitions: int = Field(..., title='Acquisitions')
-    users: int = Field(..., title='Users')
-
-
-class AppsApiSerializersEntriesAuthorSerializerDetailed(BaseModel):
+class AppsApiSerializersAnnotationAnnotationItemSerializerBase(BaseModel):
     id: UUID = Field(..., title='Id')
-    name: str = Field(..., title='Name')
-    surname: str = Field(..., title='Surname')
-    catalog_id: UUID = Field(..., title='Catalog Id')
+    annotation_id: UUID = Field(..., title='Annotation Id')
+    page: int = Field(..., title='Page')
+    content: str = Field(..., title='Content')
+    text: str | None = Field(None, title='Text')
+    quads: list[dict[str, Any]] | None = Field(None, title='Quads')
     created_at: AwareDatetime = Field(..., title='Created At')
     updated_at: AwareDatetime = Field(..., title='Updated At')
 
 
-class DetailType(Enum):
-    field_out_of_range = '/out-of-range'
-    field_not_found = '/not-found'
-    field_validation_error = '/validation-error'
-    field_conflict = '/conflict'
-    field_forbidden = '/forbidden'
-    field_internal_error = '/internal-error'
-    field_passphrase_required = '/passphrase-required'
-    field_readium_amount_below_active_count = '/readium-amount-below-active-count'
-
-
-class AppsCoreErrorsProblemDetail(BaseModel):
-    title: str = Field(..., title='Title')
-    type: DetailType | None = None
-    detail: str | None = Field(None, title='Detail')
-    trace: list[str] | None = Field(None, title='Trace')
-    additional_data: Any | None = Field(None, title='Additional Data')
-
-
-class AppsApiSerializersTokensTokenSerializerRefresh(BaseModel):
-    access_token: str = Field(..., title='Access Token')
-
-
-class AppsAssistantSerializersChatEntrySerializer(ChatEntrySerializer):
-    pass
-
-
-class AppsApiSerializersEntriesEntryFacetAvailability(BaseModel):
-    state: str = Field(..., title='State')
-    count: int = Field(..., title='Count')
-
-
-class AppsApiSerializersEntriesAuthorSerializerBase(BaseModel):
+class AppsReadiumSerializersReservationSerializerBase(BaseModel):
     id: UUID = Field(..., title='Id')
+    entry_id: UUID = Field(..., title='Entry Id')
+    user_id: UUID = Field(..., title='User Id')
+    position: int = Field(..., title='Position')
+    status: Status
+    requested_at: AwareDatetime = Field(..., title='Requested At')
+    available_at: AwareDatetime | None = Field(None, title='Available At')
+    claim_deadline: AwareDatetime | None = Field(None, title='Claim Deadline')
+    claimed_license_id: UUID | None = Field(None, title='Claimed License Id')
+    created_at: AwareDatetime = Field(..., title='Created At')
+    updated_at: AwareDatetime = Field(..., title='Updated At')
+
+
+class AppsApiSerializersUsersUserSerializerDetailed(BaseModel):
+    id: UUID = Field(..., title='Id')
+    username: str = Field(..., title='Username')
     name: str = Field(..., title='Name')
     surname: str = Field(..., title='Surname')
+    is_superuser: bool = Field(..., title='Is Superuser')
+    is_active: bool = Field(..., title='Is Active')
+    last_login: AwareDatetime = Field(..., title='Last Login')
+    created_at: AwareDatetime = Field(..., title='Created At')
+    updated_at: AwareDatetime = Field(..., title='Updated At')
+    permissions: list[str] = Field(..., title='Permissions')
+    catalog_permissions: dict[str, Mode] | None = Field(
+        None, title='Catalog Permissions'
+    )
+    lcp_passphrase_hash: str | None = Field(None, title='Lcp Passphrase Hash')
+    lcp_passphrase_hint: str | None = Field(None, title='Lcp Passphrase Hint')
+
+
+class AppsAssistantSerializersExplanationExampleSerializer(BaseModel):
+    label: str = Field(..., title='Label')
+    description: str = Field(..., title='Description')
+
+
+class AgentHighlightSerializer(BaseModel):
+    id: UUID = Field(..., title='Id')
+    seq: int = Field(..., title='Seq')
+    page: int = Field(..., title='Page')
+    match: str = Field(..., title='Match')
+    quads: list[dict[str, Any]] = Field(..., title='Quads')
+    text: str = Field(..., title='Text')
+    note: str = Field(..., title='Note')
+
+
+class AppsAssistantSerializersAgentAnnotationSerializerBase(BaseModel):
+    id: UUID = Field(..., title='Id')
+    user_acquisition_id: UUID = Field(..., title='User Acquisition Id')
+    title: str = Field(..., title='Title')
+    prompt: str = Field(..., title='Prompt')
+    summary: str = Field(..., title='Summary')
+    status: str = Field(..., title='Status')
+    unresolved_count: int = Field(..., title='Unresolved Count')
+    highlights: list[AgentHighlightSerializer] | None = Field(None, title='Highlights')
+    created_at: AwareDatetime = Field(..., title='Created At')
+    updated_at: AwareDatetime = Field(..., title='Updated At')
+
+
+class AppsApiSerializersEntriesCategorySerializerBase(BaseModel):
+    id: UUID = Field(..., title='Id')
+    term: str = Field(..., title='Term')
+    label: dict[str, str] = Field(..., title='Label')
 
 
 class AppsExtractionSerializersExtractionRunSerializerBase(BaseModel):
@@ -199,34 +317,22 @@ class AppsExtractionSerializersExtractionRunSerializerBase(BaseModel):
     created_at: AwareDatetime = Field(..., title='Created At')
 
 
-class AppsApiSerializersCatalogsCatalogSerializerBase(BaseModel):
+class AppsExtractionDiscoveryEntryRegionSerializer(BaseModel):
     id: UUID = Field(..., title='Id')
-    creator_id: UUID = Field(..., title='Creator Id')
-    url_name: str = Field(..., title='Url Name')
-    title: str = Field(..., title='Title')
-    is_public: bool = Field(..., title='Is Public')
-    touched_at: AwareDatetime = Field(..., title='Touched At')
-    created_at: AwareDatetime = Field(..., title='Created At')
-    updated_at: AwareDatetime = Field(..., title='Updated At')
+    kind: str = Field(..., title='Kind')
+    page: int = Field(..., title='Page')
+    caption: str = Field(..., title='Caption')
+    printed_caption: str | None = Field(None, title='Printed Caption')
+    description: str | None = Field(None, title='Description')
+    category: str = Field(..., title='Category')
+    image_url: str = Field(..., title='Image Url')
 
 
-class ValidationErrorItem(BaseModel):
-    code: str | None = Field(None, title='Code')
-    message: str = Field(..., title='Message')
-    path: list[str] | None = Field(None, title='Path')
-
-
-class AppsCoreErrorsValidationError(BaseModel):
-    title: str = Field(..., title='Title')
-    type: DetailType | None = None
-    detail: str | None = Field(None, title='Detail')
-    trace: list[str] | None = Field(None, title='Trace')
-    additional_data: Any | None = Field(None, title='Additional Data')
-    validation_errors: list[ValidationErrorItem] = Field(..., title='Validation Errors')
-
-
-class Minimal(AppsApiSerializersUsersUserSerializerMinimal):
-    pass
+class Minimal(BaseModel):
+    id: UUID = Field(..., title='Id')
+    username: str = Field(..., title='Username')
+    name: str = Field(..., title='Name')
+    surname: str = Field(..., title='Surname')
 
 
 class UserCatalog(BaseModel):
@@ -246,69 +352,148 @@ class AppsApiSerializersCatalogsCatalogSerializerDetailed(BaseModel):
     user_catalogs: list[UserCatalog] | None = Field([], title='User Catalogs')
 
 
-class AppsApiSerializersEntriesEntryFacetLanguage(BaseModel):
-    code: str = Field(..., title='Code')
-    count: int = Field(..., title='Count')
-
-
-class AppsApiSerializersAnnotationAnnotationItemSerializerBase(BaseModel):
-    id: UUID = Field(..., title='Id')
-    annotation_id: UUID = Field(..., title='Annotation Id')
-    page: int = Field(..., title='Page')
-    content: str = Field(..., title='Content')
-    text: str | None = Field(None, title='Text')
-    quads: list[dict[str, Any]] | None = Field(None, title='Quads')
-    created_at: AwareDatetime = Field(..., title='Created At')
-    updated_at: AwareDatetime = Field(..., title='Updated At')
-
-
-class Status(Enum):
-    queued = 'queued'
-    available = 'available'
-    claimed = 'claimed'
-    expired = 'expired'
-    cancelled = 'cancelled'
-
-
-class AppsReadiumSerializersReservationSerializerBase(BaseModel):
+class AppsReadiumSerializersLicenseSerializerBase(BaseModel):
     id: UUID = Field(..., title='Id')
     entry_id: UUID = Field(..., title='Entry Id')
     user_id: UUID = Field(..., title='User Id')
-    position: int = Field(..., title='Position')
-    status: Status
-    requested_at: AwareDatetime = Field(..., title='Requested At')
-    available_at: AwareDatetime | None = Field(None, title='Available At')
-    claim_deadline: AwareDatetime | None = Field(None, title='Claim Deadline')
-    claimed_license_id: UUID | None = Field(None, title='Claimed License Id')
+    state: LicenseState
+    starts_at: AwareDatetime = Field(..., title='Starts At')
+    expires_at: AwareDatetime = Field(..., title='Expires At')
+    created_at: AwareDatetime = Field(..., title='Created At')
+    updated_at: AwareDatetime = Field(..., title='Updated At')
+    renewal_count: int | None = Field(0, title='Renewal Count')
+    download_url: str | None = Field('', title='Download Url')
+
+
+class Base(BaseModel):
+    id: UUID = Field(..., title='Id')
+    role: str = Field(..., title='Role')
+    text: str = Field(..., title='Text')
+    entry_id: UUID = Field(..., title='Entry Id')
+    contexts: list = Field(..., title='Contexts')
+    page: int = Field(..., title='Page')
+    pages_read: list[int] = Field(..., title='Pages Read')
+    displayed_entries: list = Field(..., title='Displayed Entries')
+    annotations: list[str] | None = Field(None, title='Annotations')
+    tokens_used: int = Field(..., title='Tokens Used')
+    created_at: AwareDatetime = Field(..., title='Created At')
+
+
+class AppsAssistantSerializersChatSerializerDetailed(BaseModel):
+    id: UUID = Field(..., title='Id')
+    user_id: UUID = Field(..., title='User Id')
+    entry_id: UUID = Field(..., title='Entry Id')
+    entry: ChatEntrySerializer
+    user_acquisition_id: UUID = Field(..., title='User Acquisition Id')
+    acquisition_id: UUID = Field(..., title='Acquisition Id')
+    catalog_id: UUID = Field(..., title='Catalog Id')
+    title: str = Field(..., title='Title')
+    is_active: bool = Field(..., title='Is Active')
+    message_count: int = Field(..., title='Message Count')
+    total_tokens: int = Field(..., title='Total Tokens')
+    last_message_at: AwareDatetime = Field(..., title='Last Message At')
+    created_at: AwareDatetime = Field(..., title='Created At')
+    updated_at: AwareDatetime = Field(..., title='Updated At')
+    messages: list[Base] | None = Field(None, title='Messages')
+
+
+class StatusClientIP(BaseModel):
+    remote_addr: str | None = Field(None, title='Remote Addr')
+    x_real_ip: str | None = Field(None, title='X Real Ip')
+    x_forwarded_for: str | None = Field(None, title='X Forwarded For')
+    resolved: str = Field(..., title='Resolved')
+
+
+class StatusStatistics(BaseModel):
+    catalogs: int = Field(..., title='Catalogs')
+    entries: int = Field(..., title='Entries')
+    acquisitions: int = Field(..., title='Acquisitions')
+    users: int = Field(..., title='Users')
+
+
+class AppsApiSerializersStatusStatusSerializer(BaseModel):
+    timestamp: AwareDatetime = Field(..., title='Timestamp')
+    instance: str = Field(..., title='Instance')
+    stats: StatusStatistics
+    build: str | None = Field(None, title='Build')
+    version: str | None = Field(None, title='Version')
+    python: str | None = Field(None, title='Python')
+    supervisord: dict[str, str] | None = Field(None, title='Supervisord')
+    client_ip: StatusClientIP | None = None
+    allowed_ip_ranges: list[str] | None = Field(None, title='Allowed Ip Ranges')
+
+
+class ExplanationExampleSerializer(
+    AppsAssistantSerializersExplanationExampleSerializer
+):
+    pass
+
+
+class AppsAssistantSerializersExplanationSerializerBase(BaseModel):
+    simple: str = Field(..., title='Simple')
+    examples: list[ExplanationExampleSerializer] = Field(..., title='Examples')
+    pages: list[int] = Field(..., title='Pages')
+
+
+class AppsApiSerializersFeedsFeedSerializerBase(BaseModel):
+    id: UUID = Field(..., title='Id')
+    catalog_id: UUID = Field(..., title='Catalog Id')
+    parents: list[UUID] | None = Field([], title='Parents')
+    children: list[UUID] | None = Field([], title='Children')
+    creator_id: UUID = Field(..., title='Creator Id')
+    title: dict[str, str] = Field(..., title='Title')
+    kind: FeedKind
+    url_name: str = Field(..., title='Url Name')
+    url: str | None = Field(None, title='Url')
+    content: str = Field(..., title='Content')
+    per_page: int | None = Field(None, title='Per Page')
+    touched_at: AwareDatetime = Field(..., title='Touched At')
     created_at: AwareDatetime = Field(..., title='Created At')
     updated_at: AwareDatetime = Field(..., title='Updated At')
 
 
-class AppsApiSerializersEntriesEntryFacetYears(BaseModel):
-    min: int = Field(..., title='Min')
-    max: int = Field(..., title='Max')
+class AppsApiResponseSingleResponseModel(BaseModel):
+    response: Any = Field(..., title='Response')
+
+
+class AppsApiSerializersStatusStatusClientIP(StatusClientIP):
+    pass
+
+
+class AppsCoreErrorsValidationErrorItem(BaseModel):
+    code: str | None = Field(None, title='Code')
+    message: str = Field(..., title='Message')
+    path: list[str] | None = Field(None, title='Path')
+
+
+class AppsApiSerializersEntriesEntryFacetYears(EntryFacetYears):
+    pass
+
+
+class AppsAssistantSerializersChatMessageSerializerBase(Base):
+    pass
+
+
+class AppsAssistantSerializersChatEntrySerializer(ChatEntrySerializer):
+    pass
 
 
 class AppsApiSerializersCatalogsUserCatalog(UserCatalog):
     pass
 
 
-class AppsApiSerializersUsersUserSerializerBase(BaseModel):
-    id: UUID = Field(..., title='Id')
-    username: str = Field(..., title='Username')
-    name: str = Field(..., title='Name')
-    surname: str = Field(..., title='Surname')
-    is_superuser: bool = Field(..., title='Is Superuser')
-    is_active: bool = Field(..., title='Is Active')
-    last_login: AwareDatetime = Field(..., title='Last Login')
-    created_at: AwareDatetime = Field(..., title='Created At')
-    updated_at: AwareDatetime = Field(..., title='Updated At')
+class AppsApiSerializersEntriesEntryFacetLanguage(EntryFacetLanguage):
+    pass
 
 
-class AppsApiSerializersEntriesCategorySerializerBase(BaseModel):
-    id: UUID = Field(..., title='Id')
-    term: str = Field(..., title='Term')
-    label: dict[str, str] = Field(..., title='Label')
+class AppsExtractionSerializersExtractionStatusSerializer(BaseModel):
+    status: str = Field(..., title='Status')
+    pipeline_version: int = Field(..., title='Pipeline Version')
+    available: bool = Field(..., title='Available')
+    figures: int | None = Field(0, title='Figures')
+    tables: int | None = Field(0, title='Tables')
+    equations: int | None = Field(0, title='Equations')
+    paragraphs: int | None = Field(0, title='Paragraphs')
 
 
 class AppsApiSerializersEntriesLanguageSerializerBase(BaseModel):
@@ -316,6 +501,141 @@ class AppsApiSerializersEntriesLanguageSerializerBase(BaseModel):
     name: str = Field(..., title='Name')
     alpha2: str = Field(..., title='Alpha2')
     alpha3: str = Field(..., title='Alpha3')
+
+
+class PaginationModel(AppsApiResponsePaginationModel):
+    pass
+
+
+class RootModelTypeVar(RootModel[Any]):
+    root: Any = Field(..., title='RootModel[TypeVar]')
+
+
+class AppsApiResponsePaginationResponseModel(BaseModel):
+    items: RootModelTypeVar
+    metadata: PaginationModel
+
+
+class AppsApiSerializersUsersUserSerializerMinimal(Minimal):
+    pass
+
+
+class Nested(AppsApiSerializersEntriesAcquisitionSerializerNested):
+    pass
+
+
+class UserAcquisitionType(Enum):
+    shared = 'shared'
+    personal = 'personal'
+    lcp = 'lcp'
+
+
+class AppsApiSerializersEntriesAcquisitionSerializerBase(BaseModel):
+    relation: AcquisitionType
+    mime: AcquisitionMIME
+    url: str | None = Field(None, title='Url')
+    id: UUID = Field(..., title='Id')
+
+
+class AppsApiSerializersEntriesAcquisitionSerializerDetailed(
+    AppsApiSerializersEntriesAcquisitionSerializerBase
+):
+    pass
+
+
+class AppsApiSerializersCatalogsCatalogSerializerBase(BaseModel):
+    id: UUID = Field(..., title='Id')
+    creator_id: UUID = Field(..., title='Creator Id')
+    url_name: str = Field(..., title='Url Name')
+    title: str = Field(..., title='Title')
+    is_public: bool = Field(..., title='Is Public')
+    touched_at: AwareDatetime = Field(..., title='Touched At')
+    created_at: AwareDatetime = Field(..., title='Created At')
+    updated_at: AwareDatetime = Field(..., title='Updated At')
+
+
+class AppsApiSerializersEntriesAuthorSerializerBase(BaseModel):
+    id: UUID = Field(..., title='Id')
+    name: str = Field(..., title='Name')
+    surname: str = Field(..., title='Surname')
+
+
+class AppsExtractionSerializersRegionSerializer(BaseModel):
+    id: UUID = Field(..., title='Id')
+    kind: str = Field(..., title='Kind')
+    page: int = Field(..., title='Page')
+    seq: int = Field(..., title='Seq')
+    bbox: dict[str, float] = Field(..., title='Bbox')
+    caption: str = Field(..., title='Caption')
+    printed_caption: str | None = Field(None, title='Printed Caption')
+    description: str | None = Field(None, title='Description')
+    category: str = Field(..., title='Category')
+    markdown: str = Field(..., title='Markdown')
+    latex: str = Field(..., title='Latex')
+    image_url: str = Field(..., title='Image Url')
+
+
+class ValidationErrorItem(AppsCoreErrorsValidationErrorItem):
+    pass
+
+
+class AppsCoreErrorsValidationError(BaseModel):
+    title: str = Field(..., title='Title')
+    type: DetailType | None = None
+    detail: str | None = Field(None, title='Detail')
+    trace: list[str] | None = Field(None, title='Trace')
+    additional_data: Any | None = Field(None, title='Additional Data')
+    validation_errors: list[ValidationErrorItem] = Field(..., title='Validation Errors')
+
+
+class AppsApiSerializersEntriesEntrySerializerBase(BaseModel):
+    id: UUID = Field(..., title='Id')
+    creator_id: UUID = Field(..., title='Creator Id')
+    catalog_id: UUID = Field(..., title='Catalog Id')
+    shelf_record_id: UUID | None = Field(None, title='Shelf Record Id')
+    entry_authors: list[AppsApiSerializersEntriesAuthorSerializerBase] | None = Field(
+        None, title='Entry Authors'
+    )
+    categories: list[AppsApiSerializersEntriesCategorySerializerBase] | None = Field(
+        None, title='Categories'
+    )
+    language: AppsApiSerializersEntriesLanguageSerializerBase
+    feeds: list[AppsApiSerializersFeedsFeedSerializerBase] | None = Field(
+        None, title='Feeds'
+    )
+    acquisitions: list[AppsApiSerializersEntriesAcquisitionSerializerBase] | None = (
+        Field(None, title='Acquisitions')
+    )
+    popularity: int = Field(..., title='Popularity')
+    title: str = Field(..., title='Title')
+    summary: str = Field(..., title='Summary')
+    image_url: str | None = Field(None, title='Image Url')
+    image_mime: str = Field(..., title='Image Mime')
+    thumbnail_url: str | None = Field(None, title='Thumbnail Url')
+    config: dict[str, Any] = Field(..., title='Config')
+    citation: str = Field(..., title='Citation')
+    touched_at: AwareDatetime = Field(..., title='Touched At')
+    created_at: AwareDatetime = Field(..., title='Created At')
+    updated_at: AwareDatetime = Field(..., title='Updated At')
+    lcp_state: LcpState | None = 'not_lcp'
+    available_slots: int | None = Field(0, title='Available Slots')
+    total_slots: int | None = Field(0, title='Total Slots')
+    active_count: int | None = Field(0, title='Active Count')
+    over_saturated: bool | None = Field(False, title='Over Saturated')
+    next_available_at: AwareDatetime | None = Field(None, title='Next Available At')
+    user_active_license_id: UUID | None = Field(None, title='User Active License Id')
+    queue_length: int | None = Field(0, title='Queue Length')
+    user_reservation_id: UUID | None = Field(None, title='User Reservation Id')
+    user_position: int | None = Field(None, title='User Position')
+
+
+class AppsApiSerializersStatusStatusStatistics(StatusStatistics):
+    pass
+
+
+class AppsExtractionDiscoverySimilarEntrySerializer(BaseModel):
+    entry_id: UUID = Field(..., title='Entry Id')
+    score: float = Field(..., title='Score')
 
 
 class ActivityAction(Enum):
@@ -337,255 +657,19 @@ class ActivityAction(Enum):
     reservation_cancelled = 'reservation_cancelled'
 
 
-class AppsApiSerializersEntriesAcquisitionSerializerDetailed(BaseModel):
-    relation: AcquisitionType
-    mime: AcquisitionMIME
-    url: str | None = Field(None, title='Url')
+class AppsApiSerializersUserActivitiesUserActivitySerializerBase(BaseModel):
     id: UUID = Field(..., title='Id')
-
-
-class Mode(Enum):
-    read = 'read'
-    write = 'write'
-    manage = 'manage'
-
-
-class AppsApiSerializersEntriesAcquisitionSerializerNested(BaseModel):
-    relation: AcquisitionType
-    mime: AcquisitionMIME
-    url: str | None = Field(None, title='Url')
-
-
-class AppsExtractionDiscoveryEntryRegionSerializer(BaseModel):
-    id: UUID = Field(..., title='Id')
-    kind: str = Field(..., title='Kind')
-    page: int = Field(..., title='Page')
-    caption: str = Field(..., title='Caption')
-    printed_caption: str | None = Field(None, title='Printed Caption')
-    description: str | None = Field(None, title='Description')
-    category: str = Field(..., title='Category')
-    image_url: str = Field(..., title='Image Url')
-
-
-class AppsApiSerializersUsersUserSerializerDetailed(BaseModel):
-    id: UUID = Field(..., title='Id')
-    username: str = Field(..., title='Username')
-    name: str = Field(..., title='Name')
-    surname: str = Field(..., title='Surname')
-    is_superuser: bool = Field(..., title='Is Superuser')
-    is_active: bool = Field(..., title='Is Active')
-    last_login: AwareDatetime = Field(..., title='Last Login')
-    created_at: AwareDatetime = Field(..., title='Created At')
-    updated_at: AwareDatetime = Field(..., title='Updated At')
-    permissions: list[str] = Field(..., title='Permissions')
-    catalog_permissions: dict[str, Mode] | None = Field(
-        None, title='Catalog Permissions'
-    )
-    lcp_passphrase_hash: str | None = Field(None, title='Lcp Passphrase Hash')
-    lcp_passphrase_hint: str | None = Field(None, title='Lcp Passphrase Hint')
-
-
-class Nested(AppsApiSerializersEntriesAcquisitionSerializerNested):
-    pass
-
-
-class UserAcquisitionType(Enum):
-    shared = 'shared'
-    personal = 'personal'
-    lcp = 'lcp'
-
-
-class AppsCoreErrorsValidationErrorItem(ValidationErrorItem):
-    pass
-
-
-class AppsExtractionSerializersRegionSerializer(BaseModel):
-    id: UUID = Field(..., title='Id')
-    kind: str = Field(..., title='Kind')
-    page: int = Field(..., title='Page')
-    seq: int = Field(..., title='Seq')
-    bbox: dict[str, float] = Field(..., title='Bbox')
-    caption: str = Field(..., title='Caption')
-    printed_caption: str | None = Field(None, title='Printed Caption')
-    description: str | None = Field(None, title='Description')
-    category: str = Field(..., title='Category')
-    markdown: str = Field(..., title='Markdown')
-    latex: str = Field(..., title='Latex')
-    image_url: str = Field(..., title='Image Url')
-
-
-class ExplanationExampleSerializer(BaseModel):
-    label: str = Field(..., title='Label')
-    description: str = Field(..., title='Description')
-
-
-class AppsAssistantSerializersExplanationSerializerBase(BaseModel):
-    simple: str = Field(..., title='Simple')
-    examples: list[ExplanationExampleSerializer] = Field(..., title='Examples')
-    pages: list[int] = Field(..., title='Pages')
-
-
-class StatusClientIP(BaseModel):
-    remote_addr: str | None = Field(None, title='Remote Addr')
-    x_real_ip: str | None = Field(None, title='X Real Ip')
-    x_forwarded_for: str | None = Field(None, title='X Forwarded For')
-    resolved: str = Field(..., title='Resolved')
-
-
-class StatusStatistics(AppsApiSerializersStatusStatusStatistics):
-    pass
-
-
-class AppsApiSerializersStatusStatusSerializer(BaseModel):
-    timestamp: AwareDatetime = Field(..., title='Timestamp')
-    instance: str = Field(..., title='Instance')
-    stats: StatusStatistics
-    build: str | None = Field(None, title='Build')
-    version: str | None = Field(None, title='Version')
-    python: str | None = Field(None, title='Python')
-    supervisord: dict[str, str] | None = Field(None, title='Supervisord')
-    client_ip: StatusClientIP | None = None
-    allowed_ip_ranges: list[str] | None = Field(None, title='Allowed Ip Ranges')
-
-
-class AppsApiResponsePaginationModel(PaginationModel):
-    pass
-
-
-class AppsExtractionSerializersExtractionStatusSerializer(BaseModel):
-    status: str = Field(..., title='Status')
-    pipeline_version: int = Field(..., title='Pipeline Version')
-    available: bool = Field(..., title='Available')
-    figures: int | None = Field(0, title='Figures')
-    tables: int | None = Field(0, title='Tables')
-    equations: int | None = Field(0, title='Equations')
-    paragraphs: int | None = Field(0, title='Paragraphs')
-
-
-class AppsApiSerializersEntriesEntryFacetItem(BaseModel):
-    id: UUID = Field(..., title='Id')
+    user_id: UUID = Field(..., title='User Id')
+    action: ActivityAction
     count: int = Field(..., title='Count')
-
-
-class LicenseState(Enum):
-    ready = 'ready'
-    active = 'active'
-    returned = 'returned'
-    expired = 'expired'
-    revoked = 'revoked'
-    cancelled = 'cancelled'
-
-
-class AppsReadiumSerializersLicenseSerializerBase(BaseModel):
-    id: UUID = Field(..., title='Id')
-    entry_id: UUID = Field(..., title='Entry Id')
-    user_id: UUID = Field(..., title='User Id')
-    state: LicenseState
-    starts_at: AwareDatetime = Field(..., title='Starts At')
-    expires_at: AwareDatetime = Field(..., title='Expires At')
+    metadata: dict[str, Any] = Field(..., title='Metadata')
+    entry: AppsApiSerializersEntriesEntrySerializerBase
     created_at: AwareDatetime = Field(..., title='Created At')
-    updated_at: AwareDatetime = Field(..., title='Updated At')
-    renewal_count: int | None = Field(0, title='Renewal Count')
-    download_url: str | None = Field('', title='Download Url')
+    last_occurred_at: AwareDatetime = Field(..., title='Last Occurred At')
 
 
-class AppsApiSerializersFeedsFeedSerializerBase(BaseModel):
-    id: UUID = Field(..., title='Id')
-    catalog_id: UUID = Field(..., title='Catalog Id')
-    parents: list[UUID] | None = Field([], title='Parents')
-    children: list[UUID] | None = Field([], title='Children')
-    creator_id: UUID = Field(..., title='Creator Id')
-    title: dict[str, str] = Field(..., title='Title')
-    kind: FeedKind
-    url_name: str = Field(..., title='Url Name')
-    url: str | None = Field(None, title='Url')
-    content: str = Field(..., title='Content')
-    per_page: int | None = Field(None, title='Per Page')
-    touched_at: AwareDatetime = Field(..., title='Touched At')
-    created_at: AwareDatetime = Field(..., title='Created At')
-    updated_at: AwareDatetime = Field(..., title='Updated At')
-
-
-class AppsApiSerializersStatusStatusClientIP(StatusClientIP):
+class AppsAssistantSerializersAgentHighlightSerializer(AgentHighlightSerializer):
     pass
-
-
-class AppsAssistantSerializersChatMessageSerializerBase(BaseModel):
-    id: UUID = Field(..., title='Id')
-    role: str = Field(..., title='Role')
-    text: str = Field(..., title='Text')
-    entry_id: UUID = Field(..., title='Entry Id')
-    contexts: list = Field(..., title='Contexts')
-    page: int = Field(..., title='Page')
-    pages_read: list[int] = Field(..., title='Pages Read')
-    displayed_entries: list = Field(..., title='Displayed Entries')
-    annotations: list[str] | None = Field(None, title='Annotations')
-    tokens_used: int = Field(..., title='Tokens Used')
-    created_at: AwareDatetime = Field(..., title='Created At')
-
-
-class AppsApiSerializersEntriesAcquisitionSerializerBase(
-    AppsApiSerializersEntriesAcquisitionSerializerDetailed
-):
-    pass
-
-
-class AgentHighlightSerializer(AppsAssistantSerializersAgentHighlightSerializer):
-    pass
-
-
-class AppsAssistantSerializersAgentAnnotationSerializerBase(BaseModel):
-    id: UUID = Field(..., title='Id')
-    user_acquisition_id: UUID = Field(..., title='User Acquisition Id')
-    title: str = Field(..., title='Title')
-    prompt: str = Field(..., title='Prompt')
-    summary: str = Field(..., title='Summary')
-    status: str = Field(..., title='Status')
-    unresolved_count: int = Field(..., title='Unresolved Count')
-    highlights: list[AgentHighlightSerializer] | None = Field(None, title='Highlights')
-    created_at: AwareDatetime = Field(..., title='Created At')
-    updated_at: AwareDatetime = Field(..., title='Updated At')
-
-
-class Base(AppsAssistantSerializersChatMessageSerializerBase):
-    pass
-
-
-class AppsAssistantSerializersChatSerializerDetailed(BaseModel):
-    id: UUID = Field(..., title='Id')
-    user_id: UUID = Field(..., title='User Id')
-    entry_id: UUID = Field(..., title='Entry Id')
-    entry: ChatEntrySerializer
-    user_acquisition_id: UUID = Field(..., title='User Acquisition Id')
-    acquisition_id: UUID = Field(..., title='Acquisition Id')
-    catalog_id: UUID = Field(..., title='Catalog Id')
-    title: str = Field(..., title='Title')
-    is_active: bool = Field(..., title='Is Active')
-    message_count: int = Field(..., title='Message Count')
-    total_tokens: int = Field(..., title='Total Tokens')
-    last_message_at: AwareDatetime = Field(..., title='Last Message At')
-    created_at: AwareDatetime = Field(..., title='Created At')
-    updated_at: AwareDatetime = Field(..., title='Updated At')
-    messages: list[Base] | None = Field(None, title='Messages')
-
-
-class AppsExtractionDiscoverySimilarEntrySerializer(BaseModel):
-    entry_id: UUID = Field(..., title='Entry Id')
-    score: float = Field(..., title='Score')
-
-
-class AppsApiSerializersApiKeysApiKeySerializerBase(BaseModel):
-    id: UUID = Field(..., title='Id')
-    user_id: UUID = Field(..., title='User Id')
-    name: str = Field(..., title='Name')
-    is_active: bool = Field(..., title='Is Active')
-    last_seen_at: AwareDatetime = Field(..., title='Last Seen At')
-    created_at: AwareDatetime = Field(..., title='Created At')
-    updated_at: AwareDatetime = Field(..., title='Updated At')
-
-
-class AppsApiResponseSingleResponseModel(BaseModel):
-    response: Any = Field(..., title='Response')
 
 
 class AppsApiSerializersNotificationContactsNotificationContactSerializerBase(
@@ -599,77 +683,12 @@ class AppsApiSerializersNotificationContactsNotificationContactSerializerBase(
     updated_at: AwareDatetime = Field(..., title='Updated At')
 
 
-class AppsAssistantSerializersExplanationExampleSerializer(
-    ExplanationExampleSerializer
-):
+class AppsApiSerializersEntriesEntryFacetAvailability(EntryFacetAvailability):
     pass
 
 
-class EntryFacetAvailability(AppsApiSerializersEntriesEntryFacetAvailability):
-    pass
-
-
-class EntryFacetItem(AppsApiSerializersEntriesEntryFacetItem):
-    pass
-
-
-class EntryFacetLanguage(AppsApiSerializersEntriesEntryFacetLanguage):
-    pass
-
-
-class EntryFacetYears(AppsApiSerializersEntriesEntryFacetYears):
-    pass
-
-
-class AppsApiSerializersEntriesEntryFacetSerializerBase(BaseModel):
-    languages: list[EntryFacetLanguage] = Field(..., title='Languages')
-    categories: list[EntryFacetItem] = Field(..., title='Categories')
-    feeds: list[EntryFacetItem] = Field(..., title='Feeds')
-    availability: list[EntryFacetAvailability] = Field(..., title='Availability')
-    years: EntryFacetYears
-
-
-class AppsApiSerializersAnnotationAnnotationSerializerBase(BaseModel):
-    id: UUID = Field(..., title='Id')
-    user_acquisition_id: UUID = Field(..., title='User Acquisition Id')
-    title: str = Field(..., title='Title')
-    kind: str = Field(..., title='Kind')
-    status: str = Field(..., title='Status')
-    created_at: AwareDatetime = Field(..., title='Created At')
-    updated_at: AwareDatetime = Field(..., title='Updated At')
-
-
-class CategoryForm(BaseModel):
-    catalog_id: UUID | None = Field(None, description='', title='catalog_id')
-    term: str = Field(..., description='', max_length=255, title='term')
-    label: dict[str, str] | None = Field(
-        None,
-        description='Translations keyed by ISO 639-1 language code',
-        examples=[{'sk': 'Informatika', 'en': 'Computer science'}],
-        title='label',
-    )
-    scheme: str | None = Field(None, description='', max_length=255, title='scheme')
-
-
-class AccessTokenForm(BaseModel):
-    username: str = Field(..., description='', max_length=200, title='username')
-    password: str = Field(..., description='', title='password')
-
-
-class CreateAuthorForm(BaseModel):
-    name: str = Field(..., description='', max_length=255, title='name')
-    surname: str = Field(..., description='', max_length=255, title='surname')
-    catalog_id: UUID = Field(..., description='', title='catalog_id')
-
-
-class Type(Enum):
-    email = 'email'
-
-
-class NotificationContactForm(BaseModel):
-    type: Type = Field(..., description='', title='type')
-    value: str = Field(..., description='', max_length=255, title='value')
-    is_primary: Any | None = Field(None, description='', title='is_primary')
+class AppsApiSerializersTokensTokenSerializerRefresh(BaseModel):
+    access_token: str = Field(..., title='Access Token')
 
 
 class Status1(Enum):
@@ -681,57 +700,9 @@ class UpdateReservationForm(BaseModel):
     status: Status1 = Field(..., description='', title='status')
 
 
-class Action(Enum):
-    active = 'active'
-    returned = 'returned'
-    renewed = 'renewed'
-    revoked = 'revoked'
-    cancelled = 'cancelled'
-
-
-class UpdateLicenseForm(BaseModel):
-    model_config = ConfigDict(
-        regex_engine="python-re",
-    )
-    action: Action | None = Field(None, description='', title='action')
-    state: Action | None = Field(None, description='', title='state')
-    requested_end: AwareDatetime | None = Field(
-        None, description='', title='requested_end'
-    )
-    duration: str | None = Field(
-        None,
-        description='Duration in ISO 8601 format. Example: "PT1H30M" for 1 hour and 30 minutes.\nThe format is defined as follows:\n- "P" indicates the period.\n- "Y" for years, "M" for months, "D" for days.\n- "T" indicates the start of the time section.\n- "H" for hours, "M" for minutes, "S" for seconds.\n- Valid examples include:\n  - "PT30M" (30 minutes)\n  - "P1Y2M10DT5H30M" (1 year, 2 months, 10 days, 5 hours, and 30 minutes)',
-        examples=['P14D'],
-        pattern='^P(?!P)(?:(\\d+Y)?(\\d+M)?(\\d+D)?(T(?:(\\d+H)?(\\d+M)?(\\d+S)?))?)?$',
-        title='duration',
-    )
-
-
-class UserAcquisitionForm(BaseModel):
-    acquisition_id: UUID = Field(..., description='', title='acquisition_id')
-    type: UserAcquisitionType = Field(..., description='', title='type')
-    range: str | None = Field(None, description='', title='range')
-    expire_at: AwareDatetime | None = Field(None, description='', title='expire_at')
-
-
 class UserCatalogForm(BaseModel):
     user_id: UUID = Field(..., description='', title='user_id')
     mode: Mode = Field(..., description='', title='mode')
-
-
-class CreateUserForm(BaseModel):
-    name: str = Field(..., description='', max_length=30, title='name')
-    surname: str = Field(..., description='', max_length=150, title='surname')
-    password: str = Field(..., description='', title='password')
-    is_active: bool | None = Field(None, description='', title='is_active')
-    is_superuser: bool | None = Field(None, description='', title='is_superuser')
-    lcp_passphrase: str | None = Field(
-        None, description='', max_length=255, min_length=4, title='lcp_passphrase'
-    )
-    lcp_passphrase_hint: str | None = Field(
-        None, description='', max_length=255, title='lcp_passphrase_hint'
-    )
-    username: str = Field(..., description='', max_length=200, title='username')
 
 
 class FeedForm(BaseModel):
@@ -750,15 +721,12 @@ class FeedForm(BaseModel):
     parents: UUID | None = Field(None, description='', title='parents')
 
 
-class Status2(Enum):
-    done = 'done'
-    failed = 'failed'
-
-
-class JobReportForm(BaseModel):
-    status: Status2 = Field(..., description='', title='status')
-    error: str | None = Field(None, description='', title='error')
-    provenance: str | None = Field(None, description='', title='provenance')
+class ExplainForm(BaseModel):
+    user_acquisition_id: UUID = Field(..., description='', title='user_acquisition_id')
+    text: str | None = Field(None, description='', max_length=4000, title='text')
+    region_id: str | None = Field(None, description='', title='region_id')
+    page: int | None = Field(None, description='', ge=1, title='page')
+    language: str | None = Field(None, description='', max_length=10, title='language')
 
 
 class Kind1(Enum):
@@ -773,39 +741,16 @@ class ParagraphLinkForm(BaseModel):
     score: int | None = Field(None, description='', title='score')
 
 
-class Kind2(Enum):
-    figure = 'figure'
-    table = 'table'
-    equation = 'equation'
-
-
-class RegionForm(BaseModel):
-    kind: Kind2 = Field(..., description='', title='kind')
-    page: int = Field(..., description='', ge=1, title='page')
-    seq: int = Field(..., description='', title='seq')
-    bbox: str = Field(..., description='', title='bbox')
-    image_path: str | None = Field(
-        None, description='', max_length=255, title='image_path'
+class CategoryForm(BaseModel):
+    catalog_id: UUID | None = Field(None, description='', title='catalog_id')
+    term: str = Field(..., description='', max_length=255, title='term')
+    label: dict[str, str] | None = Field(
+        None,
+        description='Translations keyed by ISO 639-1 language code',
+        examples=[{'sk': 'Informatika', 'en': 'Computer science'}],
+        title='label',
     )
-    caption: str | None = Field(None, description='', title='caption')
-    printed_caption: str | None = Field(None, description='', title='printed_caption')
-    description: str | None = Field(None, description='', title='description')
-    category: str | None = Field(None, description='', max_length=50, title='category')
-    markdown: str | None = Field(None, description='', title='markdown')
-    latex: str | None = Field(None, description='', title='latex')
-    provenance: str | None = Field(None, description='', title='provenance')
-
-
-class AnnotationItemForm(BaseModel):
-    annotation_id: UUID = Field(..., description='', title='annotation_id')
-    content: str = Field(..., description='', title='content')
-    page: int = Field(..., description='', title='page')
-    text: str | None = Field(None, description='', title='text')
-    quads: str | None = Field(None, description='', title='quads')
-
-
-class SimilarPassageForm(BaseModel):
-    text: str | None = Field(None, description='', max_length=20000, title='text')
+    scheme: str | None = Field(None, description='', max_length=255, title='scheme')
 
 
 class MessageForm(BaseModel):
@@ -819,12 +764,91 @@ class MessageForm(BaseModel):
     language: str | None = Field(None, description='', max_length=10, title='language')
 
 
-class ExplainForm(BaseModel):
+class AuthorForm(BaseModel):
+    name: str = Field(..., description='', max_length=255, title='name')
+    surname: str = Field(..., description='', max_length=255, title='surname')
+
+
+class StartRunForm(BaseModel):
+    page_count: int = Field(..., description='', title='page_count')
+    page_sizes: str = Field(..., description='', title='page_sizes')
+    jobs: Any = Field(..., description='', title='jobs')
+    provenance: str | None = Field(None, description='', title='provenance')
+
+
+class Kind2(Enum):
+    drawing = 'drawing'
+    highlight = 'highlight'
+    bookmarks = 'bookmarks'
+
+
+class CreateAnnotationForm(BaseModel):
     user_acquisition_id: UUID = Field(..., description='', title='user_acquisition_id')
-    text: str | None = Field(None, description='', max_length=4000, title='text')
-    region_id: str | None = Field(None, description='', title='region_id')
-    page: int | None = Field(None, description='', ge=1, title='page')
-    language: str | None = Field(None, description='', max_length=10, title='language')
+    title: str = Field(..., description='', title='title')
+    kind: Kind2 | None = Field(None, description='', title='kind')
+
+
+class AccessTokenForm(BaseModel):
+    username: str = Field(..., description='', max_length=200, title='username')
+    password: str = Field(..., description='', title='password')
+
+
+class CatalogForm(BaseModel):
+    url_name: str = Field(..., description='', title='url_name')
+    title: str = Field(..., description='', max_length=100, title='title')
+    is_public: bool | None = Field(None, description='', title='is_public')
+    users: list[UserCatalogForm] | None = Field(None, description='', title='users')
+
+
+class SentenceForm(BaseModel):
+    seq: int = Field(..., description='', title='seq')
+    start: int = Field(..., description='', title='start')
+    end: int = Field(..., description='', title='end')
+    page: int = Field(..., description='', ge=1, title='page')
+    quads: str | None = Field(None, description='', title='quads')
+
+
+class ShelfRecordForm(BaseModel):
+    entry_id: UUID = Field(..., description='', title='entry_id')
+
+
+class Status2(Enum):
+    done = 'done'
+    failed = 'failed'
+
+
+class JobReportForm(BaseModel):
+    status: Status2 = Field(..., description='', title='status')
+    error: str | None = Field(None, description='', title='error')
+    provenance: str | None = Field(None, description='', title='provenance')
+
+
+class CreateReservationForm(ShelfRecordForm):
+    pass
+
+
+class RefreshTokenForm(BaseModel):
+    refresh: str = Field(..., description='', title='refresh')
+
+
+class CreateAuthorForm(BaseModel):
+    name: str = Field(..., description='', max_length=255, title='name')
+    surname: str = Field(..., description='', max_length=255, title='surname')
+    catalog_id: UUID = Field(..., description='', title='catalog_id')
+
+
+class UserForm(BaseModel):
+    name: str = Field(..., description='', max_length=30, title='name')
+    surname: str = Field(..., description='', max_length=150, title='surname')
+    password: str | None = Field(None, description='', title='password')
+    is_active: bool | None = Field(None, description='', title='is_active')
+    is_superuser: bool | None = Field(None, description='', title='is_superuser')
+    lcp_passphrase: str | None = Field(
+        None, description='', max_length=255, min_length=4, title='lcp_passphrase'
+    )
+    lcp_passphrase_hint: str | None = Field(
+        None, description='', max_length=255, title='lcp_passphrase_hint'
+    )
 
 
 class CreateLicenseForm(BaseModel):
@@ -842,37 +866,37 @@ class CreateLicenseForm(BaseModel):
     starts_at: AwareDatetime | None = Field(None, description='', title='starts_at')
 
 
-class Kind3(Enum):
-    drawing = 'drawing'
-    highlight = 'highlight'
-    bookmarks = 'bookmarks'
-
-
-class CreateAnnotationForm(BaseModel):
-    user_acquisition_id: UUID = Field(..., description='', title='user_acquisition_id')
-    title: str = Field(..., description='', title='title')
-    kind: Kind3 | None = Field(None, description='', title='kind')
-
-
-class AuthorForm(BaseModel):
-    name: str = Field(..., description='', max_length=255, title='name')
-    surname: str = Field(..., description='', max_length=255, title='surname')
-
-
-class UpdateAnnotationForm(BaseModel):
-    title: str = Field(..., description='', title='title')
-
-
 class EncryptionTriggerForm(BaseModel):
     force: bool | None = Field(None, description='', title='force')
 
 
-class RegionsForm(BaseModel):
-    regions: list[RegionForm] = Field(..., description='', title='regions')
+class CreateUserForm(BaseModel):
+    name: str = Field(..., description='', max_length=30, title='name')
+    surname: str = Field(..., description='', max_length=150, title='surname')
+    password: str = Field(..., description='', title='password')
+    is_active: bool | None = Field(None, description='', title='is_active')
+    is_superuser: bool | None = Field(None, description='', title='is_superuser')
+    lcp_passphrase: str | None = Field(
+        None, description='', max_length=255, min_length=4, title='lcp_passphrase'
+    )
+    lcp_passphrase_hint: str | None = Field(
+        None, description='', max_length=255, title='lcp_passphrase_hint'
+    )
+    username: str = Field(..., description='', max_length=200, title='username')
 
 
-class CreateReservationForm(BaseModel):
-    entry_id: UUID = Field(..., description='', title='entry_id')
+class HighlightForm(BaseModel):
+    user_acquisition_id: UUID = Field(..., description='', title='user_acquisition_id')
+    prompt: str = Field(..., description='', max_length=2000, title='prompt')
+    language: str | None = Field(None, description='', max_length=10, title='language')
+
+
+class AnnotationItemForm(BaseModel):
+    annotation_id: UUID = Field(..., description='', title='annotation_id')
+    content: str = Field(..., description='', title='content')
+    page: int = Field(..., description='', title='page')
+    text: str | None = Field(None, description='', title='text')
+    quads: str | None = Field(None, description='', title='quads')
 
 
 class EvilflowersRenderType(Enum):
@@ -911,56 +935,40 @@ class EntryConfigForm(BaseModel):
     )
 
 
-class UserForm(BaseModel):
-    name: str = Field(..., description='', max_length=30, title='name')
-    surname: str = Field(..., description='', max_length=150, title='surname')
-    password: str | None = Field(None, description='', title='password')
-    is_active: bool | None = Field(None, description='', title='is_active')
-    is_superuser: bool | None = Field(None, description='', title='is_superuser')
-    lcp_passphrase: str | None = Field(
-        None, description='', max_length=255, min_length=4, title='lcp_passphrase'
+class Type(Enum):
+    email = 'email'
+
+
+class NotificationContactForm(BaseModel):
+    type: Type = Field(..., description='', title='type')
+    value: str = Field(..., description='', max_length=255, title='value')
+    is_primary: Any | None = Field(None, description='', title='is_primary')
+
+
+class Action(Enum):
+    active = 'active'
+    returned = 'returned'
+    renewed = 'renewed'
+    revoked = 'revoked'
+    cancelled = 'cancelled'
+
+
+class UpdateLicenseForm(BaseModel):
+    model_config = ConfigDict(
+        regex_engine="python-re",
     )
-    lcp_passphrase_hint: str | None = Field(
-        None, description='', max_length=255, title='lcp_passphrase_hint'
+    action: Action | None = Field(None, description='', title='action')
+    state: Action | None = Field(None, description='', title='state')
+    requested_end: AwareDatetime | None = Field(
+        None, description='', title='requested_end'
     )
-
-
-class ApiKeyForm(BaseModel):
-    user_id: UUID | None = Field(None, description='', title='user_id')
-    name: str | None = Field(None, description='', max_length=100, title='name')
-    is_active: bool | None = Field(None, description='', title='is_active')
-
-
-class SentenceForm(BaseModel):
-    seq: int = Field(..., description='', title='seq')
-    start: int = Field(..., description='', title='start')
-    end: int = Field(..., description='', title='end')
-    page: int = Field(..., description='', ge=1, title='page')
-    quads: str | None = Field(None, description='', title='quads')
-
-
-class CatalogForm(BaseModel):
-    url_name: str = Field(..., description='', title='url_name')
-    title: str = Field(..., description='', max_length=100, title='title')
-    is_public: bool | None = Field(None, description='', title='is_public')
-    users: list[UserCatalogForm] | None = Field(None, description='', title='users')
-
-
-class HighlightForm(BaseModel):
-    user_acquisition_id: UUID = Field(..., description='', title='user_acquisition_id')
-    prompt: str = Field(..., description='', max_length=2000, title='prompt')
-    language: str | None = Field(None, description='', max_length=10, title='language')
-
-
-class StartRunForm(BaseModel):
-    page_count: int = Field(..., description='', title='page_count')
-    page_sizes: str = Field(..., description='', title='page_sizes')
-    jobs: Any = Field(..., description='', title='jobs')
-    provenance: str | None = Field(None, description='', title='provenance')
-
-
-class RefreshTokenForm(BaseModel):
-    refresh: str = Field(..., description='', title='refresh')
+    duration: str | None = Field(
+        None,
+        description='Duration in ISO 8601 format. Example: "PT1H30M" for 1 hour and 30 minutes.\nThe format is defined as follows:\n- "P" indicates the period.\n- "Y" for years, "M" for months, "D" for days.\n- "T" indicates the start of the time section.\n- "H" for hours, "M" for minutes, "S" for seconds.\n- Valid examples include:\n  - "PT30M" (30 minutes)\n  - "P1Y2M10DT5H30M" (1 year, 2 months, 10 days, 5 hours, and 30 minutes)',
+        examples=['P14D'],
+        pattern='^P(?!P)(?:(\\d+Y)?(\\d+M)?(\\d+D)?(T(?:(\\d+H)?(\\d+M)?(\\d+S)?))?)?$',
+        title='duration',
+    )
 
 
 class ChatForm(BaseModel):
@@ -971,25 +979,77 @@ class ChatForm(BaseModel):
     )
 
 
-class ShelfRecordForm(CreateReservationForm):
-    pass
+class ApiKeyForm(BaseModel):
+    user_id: UUID | None = Field(None, description='', title='user_id')
+    name: str | None = Field(None, description='', max_length=100, title='name')
+    is_active: bool | None = Field(None, description='', title='is_active')
 
 
-class ParagraphForm(BaseModel):
+class Kind3(Enum):
+    figure = 'figure'
+    table = 'table'
+    equation = 'equation'
+
+
+class RegionForm(BaseModel):
+    kind: Kind3 = Field(..., description='', title='kind')
     page: int = Field(..., description='', ge=1, title='page')
     seq: int = Field(..., description='', title='seq')
-    section: str | None = Field(None, description='', title='section')
     bbox: str = Field(..., description='', title='bbox')
-    text: str = Field(..., description='', title='text')
-    embedding: Any | None = Field(None, description='', title='embedding')
-    sentences: list[SentenceForm] | None = Field(
-        None, description='', title='sentences'
+    image_path: str | None = Field(
+        None, description='', max_length=255, title='image_path'
     )
+    caption: str | None = Field(None, description='', title='caption')
+    printed_caption: str | None = Field(None, description='', title='printed_caption')
+    description: str | None = Field(None, description='', title='description')
+    category: str | None = Field(None, description='', max_length=50, title='category')
+    markdown: str | None = Field(None, description='', title='markdown')
+    latex: str | None = Field(None, description='', title='latex')
+    provenance: str | None = Field(None, description='', title='provenance')
+
+
+class UpdateAnnotationForm(BaseModel):
+    title: str = Field(..., description='', title='title')
 
 
 class PriceForm(BaseModel):
     currency_code: str = Field(..., description='', title='currency_code')
     value: int = Field(..., description='', title='value')
+
+
+class UserAcquisitionForm(BaseModel):
+    acquisition_id: UUID = Field(..., description='', title='acquisition_id')
+    type: UserAcquisitionType = Field(..., description='', title='type')
+    range: str | None = Field(None, description='', title='range')
+    expire_at: AwareDatetime | None = Field(None, description='', title='expire_at')
+
+
+class SimilarPassageForm(BaseModel):
+    text: str | None = Field(None, description='', max_length=20000, title='text')
+
+
+class AppsReadiumSerializersLicenseSerializerDetailed(BaseModel):
+    id: UUID = Field(..., title='Id')
+    entry_id: UUID = Field(..., title='Entry Id')
+    user_id: UUID = Field(..., title='User Id')
+    state: LicenseState
+    starts_at: AwareDatetime = Field(..., title='Starts At')
+    expires_at: AwareDatetime = Field(..., title='Expires At')
+    created_at: AwareDatetime = Field(..., title='Created At')
+    updated_at: AwareDatetime = Field(..., title='Updated At')
+    renewal_count: int | None = Field(0, title='Renewal Count')
+    download_url: str | None = Field('', title='Download Url')
+    entry: AppsApiSerializersEntriesEntrySerializerBase
+
+
+class Detailed(AppsApiSerializersUsersUserSerializerDetailed):
+    pass
+
+
+class AppsApiSerializersTokensTokenSerializerAccess(BaseModel):
+    access_token: str = Field(..., title='Access Token')
+    refresh_token: str = Field(..., title='Refresh Token')
+    user: Detailed
 
 
 class AppsApiSerializersEntriesEntrySerializerDetailed(BaseModel):
@@ -1040,66 +1100,19 @@ class AppsApiSerializersEntriesEntrySerializerDetailed(BaseModel):
     related_entries: list[UUID] | None = Field(None, title='Related Entries')
 
 
-class AppsApiSerializersEntriesEntrySerializerBase(BaseModel):
+class AppsReadiumSerializersReservationSerializerDetailed(BaseModel):
     id: UUID = Field(..., title='Id')
-    creator_id: UUID = Field(..., title='Creator Id')
-    catalog_id: UUID = Field(..., title='Catalog Id')
-    shelf_record_id: UUID | None = Field(None, title='Shelf Record Id')
-    entry_authors: list[AppsApiSerializersEntriesAuthorSerializerBase] | None = Field(
-        None, title='Entry Authors'
-    )
-    categories: list[AppsApiSerializersEntriesCategorySerializerBase] | None = Field(
-        None, title='Categories'
-    )
-    language: AppsApiSerializersEntriesLanguageSerializerBase
-    feeds: list[AppsApiSerializersFeedsFeedSerializerBase] | None = Field(
-        None, title='Feeds'
-    )
-    acquisitions: list[AppsApiSerializersEntriesAcquisitionSerializerBase] | None = (
-        Field(None, title='Acquisitions')
-    )
-    popularity: int = Field(..., title='Popularity')
-    title: str = Field(..., title='Title')
-    summary: str = Field(..., title='Summary')
-    image_url: str | None = Field(None, title='Image Url')
-    image_mime: str = Field(..., title='Image Mime')
-    thumbnail_url: str | None = Field(None, title='Thumbnail Url')
-    config: dict[str, Any] = Field(..., title='Config')
-    citation: str = Field(..., title='Citation')
-    touched_at: AwareDatetime = Field(..., title='Touched At')
+    entry_id: UUID = Field(..., title='Entry Id')
+    user_id: UUID = Field(..., title='User Id')
+    position: int = Field(..., title='Position')
+    status: Status
+    requested_at: AwareDatetime = Field(..., title='Requested At')
+    available_at: AwareDatetime | None = Field(None, title='Available At')
+    claim_deadline: AwareDatetime | None = Field(None, title='Claim Deadline')
+    claimed_license_id: UUID | None = Field(None, title='Claimed License Id')
     created_at: AwareDatetime = Field(..., title='Created At')
     updated_at: AwareDatetime = Field(..., title='Updated At')
-    lcp_state: LcpState | None = 'not_lcp'
-    available_slots: int | None = Field(0, title='Available Slots')
-    total_slots: int | None = Field(0, title='Total Slots')
-    active_count: int | None = Field(0, title='Active Count')
-    over_saturated: bool | None = Field(False, title='Over Saturated')
-    next_available_at: AwareDatetime | None = Field(None, title='Next Available At')
-    user_active_license_id: UUID | None = Field(None, title='User Active License Id')
-    queue_length: int | None = Field(0, title='Queue Length')
-    user_reservation_id: UUID | None = Field(None, title='User Reservation Id')
-    user_position: int | None = Field(None, title='User Position')
-
-
-class AppsApiSerializersUserActivitiesUserActivitySerializerBase(BaseModel):
-    id: UUID = Field(..., title='Id')
-    user_id: UUID = Field(..., title='User Id')
-    action: ActivityAction
-    count: int = Field(..., title='Count')
-    metadata: dict[str, Any] = Field(..., title='Metadata')
     entry: AppsApiSerializersEntriesEntrySerializerBase
-    created_at: AwareDatetime = Field(..., title='Created At')
-    last_occurred_at: AwareDatetime = Field(..., title='Last Occurred At')
-
-
-class Detailed(AppsApiSerializersUsersUserSerializerDetailed):
-    pass
-
-
-class AppsApiSerializersTokensTokenSerializerAccess(BaseModel):
-    access_token: str = Field(..., title='Access Token')
-    refresh_token: str = Field(..., title='Refresh Token')
-    user: Detailed
 
 
 class AppsApiSerializersShelfRecordsShelfRecordSerializerBase(BaseModel):
@@ -1123,33 +1136,21 @@ class AppsApiSerializersUserAcquisitionsUserAcquisitionSerializerBase(BaseModel)
     updated_at: AwareDatetime = Field(..., title='Updated At')
 
 
-class AppsReadiumSerializersReservationSerializerDetailed(BaseModel):
-    id: UUID = Field(..., title='Id')
-    entry_id: UUID = Field(..., title='Entry Id')
-    user_id: UUID = Field(..., title='User Id')
-    position: int = Field(..., title='Position')
-    status: Status
-    requested_at: AwareDatetime = Field(..., title='Requested At')
-    available_at: AwareDatetime | None = Field(None, title='Available At')
-    claim_deadline: AwareDatetime | None = Field(None, title='Claim Deadline')
-    claimed_license_id: UUID | None = Field(None, title='Claimed License Id')
-    created_at: AwareDatetime = Field(..., title='Created At')
-    updated_at: AwareDatetime = Field(..., title='Updated At')
-    entry: AppsApiSerializersEntriesEntrySerializerBase
+class AcquisitionMetaForm(BaseModel):
+    relation: AcquisitionType | None = Field(None, description='', title='relation')
+    prices: list[PriceForm] | None = Field(None, description='', title='prices')
 
 
-class AppsReadiumSerializersLicenseSerializerDetailed(BaseModel):
-    id: UUID = Field(..., title='Id')
-    entry_id: UUID = Field(..., title='Entry Id')
-    user_id: UUID = Field(..., title='User Id')
-    state: LicenseState
-    starts_at: AwareDatetime = Field(..., title='Starts At')
-    expires_at: AwareDatetime = Field(..., title='Expires At')
-    created_at: AwareDatetime = Field(..., title='Created At')
-    updated_at: AwareDatetime = Field(..., title='Updated At')
-    renewal_count: int | None = Field(0, title='Renewal Count')
-    download_url: str | None = Field('', title='Download Url')
-    entry: AppsApiSerializersEntriesEntrySerializerBase
+class ParagraphForm(BaseModel):
+    page: int = Field(..., description='', ge=1, title='page')
+    seq: int = Field(..., description='', title='seq')
+    section: str | None = Field(None, description='', title='section')
+    bbox: str = Field(..., description='', title='bbox')
+    text: str = Field(..., description='', title='text')
+    embedding: Any | None = Field(None, description='', title='embedding')
+    sentences: list[SentenceForm] | None = Field(
+        None, description='', title='sentences'
+    )
 
 
 class ParagraphsForm(BaseModel):
@@ -1157,9 +1158,8 @@ class ParagraphsForm(BaseModel):
     links: list[ParagraphLinkForm] | None = Field(None, description='', title='links')
 
 
-class AcquisitionMetaForm(BaseModel):
-    relation: AcquisitionType | None = Field(None, description='', title='relation')
-    prices: list[PriceForm] | None = Field(None, description='', title='prices')
+class RegionsForm(BaseModel):
+    regions: list[RegionForm] = Field(..., description='', title='regions')
 
 
 class AcquisitionForm(BaseModel):
